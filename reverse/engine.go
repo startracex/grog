@@ -41,7 +41,7 @@ func (e *Engine) ServeHTTP(w http.ResponseWriter, r *http.Request) {
     }
 }
 
-// Run Listen multiple address
+// Run listen multiple address
 func (e *Engine) Run(addr ...string) {
 
     for port, keys := range e.ListingPorts {

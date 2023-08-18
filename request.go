@@ -67,7 +67,7 @@ func (r *HttpRequest) Addr() string {
     return r.OriginalRequest.RemoteAddr
 }
 
-// UseRouter get  path, params
+// UseRouter get path, params
 func (r *HttpRequest) UseRouter() (string, map[string]string) {
     return r.Path, r.Params
 }
