@@ -10,6 +10,6 @@ func TestMethods(t *testing.T) {
     }
     e := New()
     e.METHOD(GET, "/get", writeMethod)
-    e.ANY("/any", writeMethod)
+    e.NoRoute(writeMethod)
     e.ListenAndServe("9527")
 }

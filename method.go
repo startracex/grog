@@ -64,11 +64,12 @@ func (group *RouterGroup) TRACE(pattern string, handlers ...HandlerFunc) {
     group.AddRoute(TRACE, pattern, handlers)
 }
 
+// METHOD defines the method to add request
 func (group *RouterGroup) METHOD(method, pattern string, handlers ...HandlerFunc) {
     group.AddRoute(strings.ToUpper(method), pattern, handlers)
 }
 
-// ALL defines the method to add all request
+// ALL defines the method to add all requests
 func (group *RouterGroup) ALL(pattern string, handlers ...HandlerFunc) {
     all := []string{GET, POST, PUT, DELETE, PATCH, OPTIONS, HEAD, CONNECT, TRACE}
     for _, method := range all {
@@ -76,17 +77,17 @@ func (group *RouterGroup) ALL(pattern string, handlers ...HandlerFunc) {
     }
 }
 
-// ANY defines the method to add Any request
+// ANY defines the method to add any request
 func (group *RouterGroup) ANY(pattern string, handlers ...HandlerFunc) {
     group.AddRoute(ANY, pattern, handlers)
 }
 
-// Handle is alias of ANY
-func (group *RouterGroup) Handle(pattern string, handlers ...HandlerFunc) {
-    group.ANY(pattern, handlers...)
+// NoRoute accept not found subpath handler
+func (group *RouterGroup) NoRoute(handlers ...HandlerFunc) {
+    group.ANY("/*url", handlers...)
 }
 
-// File Handle file/directory
+// File handle file/directory
 func (group *RouterGroup) File(pattern string, path string) {
     f, err := os.Open(path)
     if err != nil {
@@ -109,7 +110,7 @@ func (group *RouterGroup) File(pattern string, path string) {
     }
 }
 
-// Static Handle directory
+// Static handle directory
 func (group *RouterGroup) Static(pattern string, root string) {
     key := "path"
     handler := func(req *HttpRequest, res *HttpResponse) {

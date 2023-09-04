@@ -79,19 +79,19 @@ func (r *Router) getRoutes(method string) []*core.Node {
 
 // Handle request or not found
 func (r *Router) Handle(req *HttpRequest, res *HttpResponse) {
-    n, params := r.getRoute(req.Method, req.URL().Path)
-    m := req.Method
-    if n == nil {
-        n, params = r.getRoute(ANY, req.URL().Path)
-        m = ANY
+    method := req.Method
+    path := req.URL().Path
+    node, params := r.getRoute(method, path)
+    if node == nil {
+        node, params = r.getRoute(ANY, path)
+        method = ANY
     }
-    if n != nil {
-        key := m + "-" + n.Pattern
+    if node != nil {
+        key := method + "-" + node.Pattern
         req.Params = params
         req.Handlers = append(req.Handlers, r.handlers[key]...)
     } else {
-        res.Error(404, "NOT FOUND: "+req.URL().Path)
+        res.Error(404, "NOT FOUND: "+path)
     }
-
     req.Next(res)
 }

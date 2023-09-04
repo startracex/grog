@@ -13,7 +13,6 @@ type Request = *HttpRequest
 
 type HandlerFunc func(Request, Response)
 
-// HttpRequest typeof Request, Contexts
 type HttpRequest struct {
     // original http request
     OriginalRequest *http.Request
@@ -134,8 +133,9 @@ func (r *HttpRequest) StringBody() string {
     if err != nil {
         return ""
     }
+    b := buf.String()
     r.Engine.Pool.Put(buf)
-    return buf.String()
+    return b
 }
 
 // BytesBody get body as buffer.Bytes()
@@ -146,12 +146,17 @@ func (r *HttpRequest) BytesBody() []byte {
     if err != nil {
         return []byte{}
     }
+    b := buf.Bytes()
     r.Engine.Pool.Put(buf)
-    return buf.Bytes()
+    return b
 }
 
 func (r *HttpRequest) Context() context.Context {
     return r.OriginalRequest.Context()
+}
+
+func (r *HttpRequest) WithContext(ctx context.Context) {
+    r.OriginalRequest = r.OriginalRequest.WithContext(ctx)
 }
 
 // SetValue Set custom parameters to the context
