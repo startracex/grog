@@ -54,7 +54,7 @@ func (e *Engine) LoadHTML(path ...string) {
     for _, v := range path {
         files = append(files, toolkit.WalkFiles(v)...)
     }
-    e.Template = *template.Must(template.New("").Funcs(e.FuncMap).ParseFiles(path...))
+    e.Template = *template.Must(template.New("").Funcs(e.FuncMap).ParseFiles(files...))
 }
 
 // LoadHTMLFiles load the path file
@@ -75,7 +75,7 @@ func (e *Engine) ListenAndServe(addr string) error {
     return http.ListenAndServe(addr, e)
 }
 
-// Run is alias for ListenAndServe
+// Run is alias of ListenAndServe
 func (e *Engine) Run(addr string) error {
     return e.ListenAndServe(addr)
 }

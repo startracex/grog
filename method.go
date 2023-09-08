@@ -124,3 +124,8 @@ func (group *RouterGroup) Static(pattern string, root string) {
     group.GET(pattern+"/*"+key, handler)
     group.HEAD(pattern+"/*"+key, handler)
 }
+
+// Public is the alias of Static
+func (group *RouterGroup) Public(pattern string, root string) {
+    group.Static(pattern, root)
+}
