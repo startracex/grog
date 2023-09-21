@@ -48,7 +48,7 @@ func (e *Engine) SetPoolNew(f func() any) {
 	e.Pool.New = f
 }
 
-// LoadHTML load all file under path
+// LoadHTML load all files under paths
 func (e *Engine) LoadHTML(path ...string) {
 	var files []string
 	for _, v := range path {
