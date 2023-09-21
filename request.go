@@ -74,8 +74,7 @@ func (r *HttpRequest) UseRouter() (string, map[string]string) {
 
 // Param get the key from params
 func (r *HttpRequest) Param(key string) string {
-	value, _ := r.Params[key]
-	return value
+	return r.Params[key]
 }
 
 // Query get URLSearchParams
@@ -166,7 +165,7 @@ func (r *HttpRequest) WithContext(ctx context.Context) {
 }
 
 // SetValue Set custom parameters to the context
-func (r *HttpRequest) SetValue(key string, value any) {
+func (r *HttpRequest) SetValue(key any, value any) {
 	r.OriginalRequest = r.OriginalRequest.WithContext(
 		context.WithValue(r.OriginalRequest.Context(), key, value),
 	)
