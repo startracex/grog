@@ -43,6 +43,10 @@ func (res HttpResponse) String(data string) (int, error) {
 	return res.Writer.Write([]byte(data))
 }
 
+func (res HttpResponse) Header() http.Header {
+	return res.Writer.Header()
+}
+
 func (res HttpResponse) SetHeader(key, value string) HttpResponse {
 	res.Writer.Header().Set(key, value)
 	return res
