@@ -69,7 +69,7 @@ func (c *Cors) WriteHeaderOrigin(header http.Header, origin string) {
 	}
 }
 
-// WriteHeader get origin from
+// WriteHeader get "Origin" from getFrom, set Cors to writeTo
 func (c *Cors) WriteHeader(getFrom, writeTo http.Header) error {
 	origin := GetOrigin(getFrom)
 	if origin == "" {
@@ -82,14 +82,17 @@ func (c *Cors) WriteHeader(getFrom, writeTo http.Header) error {
 	return ErrOriginNotMatch
 }
 
-func ToSecound(d time.Duration) int64 {
+// ToSecond convert time.Duration to int64 (Second)
+func ToSecond(d time.Duration) int64 {
 	return int64(d.Seconds())
 }
 
+// JoinString call strings.Join(s, ", ")
 func JoinString(s []string) string {
 	return strings.Join(s, ", ")
 }
 
+// GetOrigin get "Origin" from header
 func GetOrigin(header http.Header) string {
 	return header.Get("Origin")
 }
