@@ -2,6 +2,7 @@ package goup
 
 import (
 	"fmt"
+	"github.com/startracex/goup/toolkit"
 	"log"
 	"runtime"
 	"strings"
@@ -36,19 +37,19 @@ func Recovery() HandlerFunc {
 	}
 }
 
-// Cors (Allow-Origin?, Allow-Methods?, Allow-Headers?)
+// Cors adds multiple AllowOrigin or "*" and allows all other fields
 func Cors(s ...string) HandlerFunc {
-	allows := []string{"*", "*", "*"}
-	for i, v := range s {
-		allows[i] = v
+	c := toolkit.CorsAllowAll()
+	if len(s) > 0 {
+		c.AllowOrigin = append([]string{}, s...)
 	}
-	allowOrigin := allows[0]
-	allowMethods := allows[1]
-	allowHeaders := allows[2]
+	return SetCors(*c)
+}
+
+// SetCors get the cors configuration from the parameter c
+func SetCors(c toolkit.Cors) HandlerFunc {
 	return func(req Request, res Response) {
-		res.SetHeader("Access-Control-Allow-Origin", allowOrigin)
-		res.SetHeader("Access-Control-Allow-Methods", allowMethods)
-		res.SetHeader("Access-Control-Allow-Headers", allowHeaders)
+		c.WriteHeader(req.Header(), res.Header())
 		req.Next(res)
 	}
 }

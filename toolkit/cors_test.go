@@ -7,7 +7,11 @@ import (
 )
 
 func TestCors(t *testing.T) {
-	var header = make(http.Header)
-	NewCors().WriteHeader(&header, "*")
-	fmt.Println(header)
+	http.HandleFunc("/", func(writer http.ResponseWriter, request *http.Request) {
+		c := CorsAllowAll()
+		h := c.Match(GetOrigin(writer.Header()))
+		c.WriteHeader(request.Header, writer.Header())
+		fmt.Println(h)
+	})
+	http.ListenAndServe(":8080", nil)
 }

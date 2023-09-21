@@ -1,6 +1,8 @@
 package goup
 
-import "testing"
+import (
+	"testing"
+)
 
 func TestMiddlewares(t *testing.T) {
 	e := New()
