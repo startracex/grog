@@ -3,6 +3,7 @@ package goup
 import (
 	"bytes"
 	"context"
+	"encoding/json"
 	"io"
 	"mime/multipart"
 	"net/http"
@@ -95,6 +96,11 @@ func (r *HttpRequest) GetFormValue(key string) string {
 // GetFormFile get the key file from form
 func (r *HttpRequest) GetFormFile(key string) (multipart.File, *multipart.FileHeader, error) {
 	return r.OriginalRequest.FormFile(key)
+}
+
+// JSON unmarshal to v
+func (r *HttpRequest) JSON(v any) error {
+	return json.Unmarshal(r.BytesBody(), v)
 }
 
 // Header get all header
