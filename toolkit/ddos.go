@@ -26,3 +26,8 @@ func AttackWithRequest(ducks *http.Request, n int) {
 	}
 	<-done
 }
+
+func Do(d *http.Request) (*http.Response, error) {
+	client := &http.Client{}
+	return client.Do(d)
+}
