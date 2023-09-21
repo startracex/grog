@@ -66,7 +66,8 @@ func (r *Router) getRoute(method string, path string) (*core.Node, map[string]st
 
 	return nil, nil
 }
-/* 
+
+/*
 func (r *Router) getRoutes(method string) []*core.Node {
 	root, ok := r.roots[method]
 	if !ok {
@@ -76,7 +77,8 @@ func (r *Router) getRoutes(method string) []*core.Node {
 	root.Travel(&nodes)
 	return nodes
 }
- */
+*/
+
 // Handle request or not found
 func (r *Router) Handle(req *HttpRequest, res *HttpResponse) {
 	method := req.Method
