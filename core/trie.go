@@ -45,17 +45,6 @@ func (n *Node) Search(parts []string, height int) *Node {
 	return nil
 }
 
-/*
-func (n *Node) Travel(list *[]*Node) {
-	if n.Pattern != "" {
-		*list = append(*list, n)
-	}
-	for _, child := range n.children {
-		child.Travel(list)
-	}
-}
-*/
-
 func (n *Node) matchChild(part string) *Node {
 	for _, child := range n.children {
 		if child.part == part || child.isWild {
