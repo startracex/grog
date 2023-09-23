@@ -5,15 +5,17 @@ import (
 	"strings"
 )
 
+type handlersInMethod = map[string][]HandlerFunc
+
 type Router struct {
 	roots    map[string]*core.Node
-	handlers map[string][]HandlerFunc
+	handlers map[string]handlersInMethod
 }
 
 func NewRouter() *Router {
 	return &Router{
 		roots:    make(map[string]*core.Node),
-		handlers: make(map[string][]HandlerFunc),
+		handlers: make(map[string]handlersInMethod),
 	}
 }
 
@@ -33,13 +35,15 @@ func parsePattern(pattern string) []string {
 
 func (r *Router) AddRoute(method string, pattern string, handlers []HandlerFunc) {
 	parts := parsePattern(pattern)
-	key := method + "-" + pattern
 	_, ok := r.roots[method]
 	if !ok {
 		r.roots[method] = &core.Node{}
 	}
 	r.roots[method].Insert(pattern, parts, 0)
-	r.handlers[key] = handlers
+	if r.handlers[pattern] == nil {
+		r.handlers[pattern] = make(map[string][]HandlerFunc)
+	}
+	r.handlers[pattern][method] = handlers
 }
 
 func (r *Router) getRoute(method string, path string) (*core.Node, map[string]string) {
@@ -67,33 +71,24 @@ func (r *Router) getRoute(method string, path string) (*core.Node, map[string]st
 	return nil, nil
 }
 
-/*
-func (r *Router) getRoutes(method string) []*core.Node {
-	root, ok := r.roots[method]
-	if !ok {
-		return nil
-	}
-	nodes := make([]*core.Node, 0)
-	root.Travel(&nodes)
-	return nodes
-}
-*/
-
 // Handle request or not found
 func (r *Router) Handle(req *HttpRequest, res *HttpResponse) {
 	method := req.Method
 	path := req.URL().Path
 	node, params := r.getRoute(method, path)
-	if node == nil {
-		node, params = r.getRoute(ANY, path)
-		method = ANY
-	}
 	if node != nil {
-		key := method + "-" + node.Pattern
 		req.Params = params
-		req.Handlers = append(req.Handlers, r.handlers[key]...)
+		req.Handlers = append(req.Handlers, r.handlers[node.Pattern][method]...)
+		req.Next(res)
 	} else {
-		res.Error(404, "NOT FOUND: "+path)
+		if req.Method == GET {
+			res.Error(404, "NOT FOUND.")
+			req.Abort()
+			return
+		} else {
+			res.Status(404)
+			req.Abort()
+			return
+		}
 	}
-	req.Next(res)
 }
