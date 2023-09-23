@@ -16,7 +16,6 @@ const (
 	OPTIONS = "OPTIONS"
 	TRACE   = "TRACE"
 	CONNECT = "CONNECT"
-	ANY     = "ANY"
 )
 
 // GET defines the method to add GET request
@@ -77,9 +76,9 @@ func (group *RouterGroup) ALL(pattern string, handlers ...HandlerFunc) {
 	}
 }
 
-// ANY defines the method to add any request
+// ANY is alias of ALL
 func (group *RouterGroup) ANY(pattern string, handlers ...HandlerFunc) {
-	group.AddRoute(ANY, pattern, handlers)
+	group.ALL(pattern, handlers...)
 }
 
 // NoRoute accept not found subpath handler
