@@ -82,7 +82,7 @@ func (r *Router) Handle(req *HttpRequest, res *HttpResponse) {
 		req.Next(res)
 	} else {
 		if req.Method == GET {
-			res.Error(404, "NOT FOUND.")
+			res.ErrorStatusText(404)
 			req.Abort()
 			return
 		} else {

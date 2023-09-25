@@ -83,11 +83,14 @@ func (group *RouterGroup) ANY(pattern string, handlers ...HandlerFunc) {
 
 // NoRoute accept not found subpath handler
 func (group *RouterGroup) NoRoute(handlers ...HandlerFunc) {
+	if len(handlers) == 0 {
+		panic("NoRoute is missing handler ")
+	}
 	group.ANY("/*url", handlers...)
 }
 
-// File handle file/directory
-func (group *RouterGroup) File(pattern string, path string) {
+// Public handle directory, or file
+func (group *RouterGroup) Public(pattern string, path string) {
 	f, err := os.Open(path)
 	if err != nil {
 		panic(err)
@@ -98,19 +101,19 @@ func (group *RouterGroup) File(pattern string, path string) {
 		panic(err)
 	}
 	if fi.IsDir() {
-		group.Static(pattern, path)
+		group.Directory(pattern, path)
 	} else {
-		group.GET(pattern, func(req *HttpRequest, res *HttpResponse) {
-			http.ServeFile(res.Writer, req.OriginalRequest, path)
-		})
-		group.HEAD(pattern, func(req *HttpRequest, res *HttpResponse) {
-			http.ServeFile(res.Writer, req.OriginalRequest, path)
-		})
+		group.File(pattern, path)
 	}
 }
 
-// Static handle directory
-func (group *RouterGroup) Static(pattern string, root string) {
+// Static is alias of Public
+func (group *RouterGroup) Static(pattern string, path string) {
+	group.Public(pattern, path)
+}
+
+// Directory handle directory, join root/pattern
+func (group *RouterGroup) Directory(pattern string, root string) {
 	key := "path"
 	handler := func(req *HttpRequest, res *HttpResponse) {
 		file := req.Params[key]
@@ -124,7 +127,12 @@ func (group *RouterGroup) Static(pattern string, root string) {
 	group.HEAD(pattern+"/*"+key, handler)
 }
 
-// Public is the alias of Static
-func (group *RouterGroup) Public(pattern string, root string) {
-	group.Static(pattern, root)
+// File handle file
+func (group *RouterGroup) File(pattern string, filepath string) {
+	group.GET(pattern, func(req *HttpRequest, res *HttpResponse) {
+		http.ServeFile(res.Writer, req.OriginalRequest, filepath)
+	})
+	group.HEAD(pattern, func(req *HttpRequest, res *HttpResponse) {
+		http.ServeFile(res.Writer, req.OriginalRequest, filepath)
+	})
 }
