@@ -34,7 +34,7 @@ func NewRequest(req *http.Request) HttpRequest {
 	}
 }
 
-// Next moves the request to the next handler
+// Next call the next handler
 func (r *HttpRequest) Next(w *HttpResponse) {
 	r.index++
 	for ; r.index < len(r.Handlers); r.index++ {
@@ -42,10 +42,12 @@ func (r *HttpRequest) Next(w *HttpResponse) {
 	}
 }
 
+// Abort handlers
 func (r *HttpRequest) Abort() {
 	r.index = len(r.Handlers)
 }
 
+// Reset handlers
 func (r *HttpRequest) Reset() {
 	r.index = -1
 }
@@ -102,7 +104,7 @@ func (r *HttpRequest) JSON(v any) error {
 	return json.Unmarshal(r.BytesBody(), v)
 }
 
-// Header get all header
+// Header get header
 func (r *HttpRequest) Header() http.Header {
 	return r.OriginalRequest.Header
 }
@@ -126,6 +128,7 @@ func (r *HttpRequest) GetCookie(key string) string {
 	return cookie.Value
 }
 
+// Body get *http.Request.Body
 func (r *HttpRequest) Body() io.ReadCloser {
 	return r.OriginalRequest.Body
 }
@@ -156,10 +159,12 @@ func (r *HttpRequest) BytesBody() []byte {
 	return b
 }
 
+// Context is alias of *http.Request.Context
 func (r *HttpRequest) Context() context.Context {
 	return r.OriginalRequest.Context()
 }
 
+// WithContext is alias of *http.Request.WithContext
 func (r *HttpRequest) WithContext(ctx context.Context) {
 	r.OriginalRequest = r.OriginalRequest.WithContext(ctx)
 }
