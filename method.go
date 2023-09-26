@@ -130,9 +130,9 @@ func (group *RouterGroup) Directory(pattern string, root string) {
 // File handle file
 func (group *RouterGroup) File(pattern string, filepath string) {
 	group.GET(pattern, func(req *HttpRequest, res *HttpResponse) {
-		http.ServeFile(res.Writer, req.OriginalRequest, filepath)
+		ServeFile(req, res, filepath)
 	})
 	group.HEAD(pattern, func(req *HttpRequest, res *HttpResponse) {
-		http.ServeFile(res.Writer, req.OriginalRequest, filepath)
+		ServeFile(req, res, filepath)
 	})
 }

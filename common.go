@@ -18,3 +18,8 @@ func Do(d *http.Request) (*http.Response, error) {
 func Redirect(request Request, response Response, url string, code int) {
 	http.Redirect(response.Writer, request.OriginalRequest, url, code)
 }
+
+// ServeFile call http.ServeFile
+func ServeFile(req Request, res Response, path string) {
+	http.ServeFile(res.Writer, req.OriginalRequest, path)
+}
