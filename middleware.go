@@ -30,7 +30,11 @@ func Recovery() HandlerFunc {
 			if err := recover(); err != nil {
 				message := fmt.Sprintf("%s", err)
 				log.Printf("%s\n\n", trace(message))
-				res.Error(500, "INTERNAL SERVER ERROR.")
+				if req.Method == GET {
+					res.ErrorStatusText(500)
+				} else {
+					res.Status(500)
+				}
 			}
 		}()
 		req.Next(res)
