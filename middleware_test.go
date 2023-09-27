@@ -6,7 +6,7 @@ import (
 
 func TestMiddlewares(t *testing.T) {
 	e := New()
-	e.Use(Logger(2), Recovery(), Cors())
+	e.Use(Logger(), Recovery(), Cors())
 	e.GET("/", func(request Request, response Response) {
 		panic("panic")
 	})

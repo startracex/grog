@@ -11,14 +11,14 @@ import (
 
 // Logger record the request path, method, custom time
 func Logger(flag ...int) HandlerFunc {
+	d := 0
+	for _, v := range flag {
+		d = d | v
+	}
+	log.SetFlags(d)
 	return func(req *HttpRequest, res *HttpResponse) {
 		t := time.Now()
 		req.Next(res)
-		d := 0
-		for _, v := range flag {
-			d = d | v
-		}
-		log.SetFlags(d)
 		log.Printf("[%s] %s <%v>", req.Method, req.Path, time.Since(t))
 	}
 }
