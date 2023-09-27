@@ -18,6 +18,7 @@ type Engine struct {
 	FuncMap  template.FuncMap
 }
 
+// ServeHTTP for http.ListenAndServe
 func (e *Engine) ServeHTTP(res http.ResponseWriter, req *http.Request) {
 	var middlewares []HandlerFunc
 	for _, group := range e.groups {
@@ -33,6 +34,7 @@ func (e *Engine) ServeHTTP(res http.ResponseWriter, req *http.Request) {
 	e.router.Handle(&q, &p)
 }
 
+// New create engine
 func New() *Engine {
 	engine := &Engine{router: NewRouter()}
 	engine.RouterGroup = &RouterGroup{engine: engine}
@@ -40,6 +42,13 @@ func New() *Engine {
 	engine.Pool.New = func() any {
 		return bytes.NewBuffer(make([]byte, 4096))
 	}
+	return engine
+}
+
+// Default use default middleware (Logger and Recovery)
+func Default() *Engine {
+	engine := New()
+	engine.Use(Logger(1), Recovery())
 	return engine
 }
 
@@ -75,8 +84,11 @@ func (e *Engine) ListenAndServe(addr string) error {
 	return http.ListenAndServe(addr, e)
 }
 
-// Run is alias of ListenAndServe
-func (e *Engine) Run(addr string) error {
+// Run call ListenAndServe or ListenAndServeTLS if it has filePath slice
+func (e *Engine) Run(addr string, filePath ...string) error {
+	if len(filePath) > 1 {
+		return e.ListenAndServeTLS(addr, filePath[0], filePath[1])
+	}
 	return e.ListenAndServe(addr)
 }
 
