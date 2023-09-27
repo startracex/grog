@@ -50,10 +50,12 @@ func Cors(s ...string) HandlerFunc {
 	return SetCors(*c)
 }
 
+type CorsConfig = toolkit.Cors
+
 // SetCors get the cors configuration from the parameter c
-func SetCors(c toolkit.Cors) HandlerFunc {
+func SetCors(c CorsConfig) HandlerFunc {
 	return func(req Request, res Response) {
-		c.WriteHeader(req.Header(), res.Header())
+		_ = c.WriteHeader(req.Header(), res.Header())
 		req.Next(res)
 	}
 }
