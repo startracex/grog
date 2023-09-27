@@ -15,6 +15,7 @@ func WalkExt(dir string, ext string) []string {
 	})
 }
 
+// WalkFiles return all files
 func WalkFiles(dir string) []string {
 	return Walk(dir, func(path string, fi os.FileInfo) bool {
 		return !fi.IsDir()
