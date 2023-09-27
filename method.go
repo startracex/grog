@@ -18,6 +18,8 @@ const (
 	CONNECT = "CONNECT"
 )
 
+var AllMethods = [...]string{GET, POST, PUT, DELETE, PATCH, OPTIONS, HEAD, CONNECT, TRACE}
+
 // GET defines the method to add GET request
 func (group *RouterGroup) GET(pattern string, handlers ...HandlerFunc) {
 	group.AddRoute(GET, pattern, handlers)
@@ -65,13 +67,19 @@ func (group *RouterGroup) TRACE(pattern string, handlers ...HandlerFunc) {
 
 // METHOD defines the method to add request
 func (group *RouterGroup) METHOD(method, pattern string, handlers ...HandlerFunc) {
-	group.AddRoute(strings.ToUpper(method), pattern, handlers)
+	method = strings.ToUpper(method)
+	for _, one := range AllMethods {
+		if method == one {
+			group.AddRoute(method, pattern, handlers)
+			return
+		}
+	}
+	panic("Unsupported method")
 }
 
 // ALL defines the method to add all requests
 func (group *RouterGroup) ALL(pattern string, handlers ...HandlerFunc) {
-	all := []string{GET, POST, PUT, DELETE, PATCH, OPTIONS, HEAD, CONNECT, TRACE}
-	for _, method := range all {
+	for _, method := range AllMethods {
 		group.AddRoute(method, pattern, handlers)
 	}
 }
