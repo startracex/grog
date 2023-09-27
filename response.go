@@ -21,10 +21,12 @@ func NewResponse(res http.ResponseWriter) HttpResponse {
 
 /* Quick usage */
 
+// Status write status code
 func (res HttpResponse) Status(code int) HttpResponse {
 	return res.WriteHeader(code)
 }
 
+// WriteHeader write status code
 func (res HttpResponse) WriteHeader(code int) HttpResponse {
 	res.Writer.WriteHeader(code)
 	return res
@@ -80,7 +82,7 @@ func (res HttpResponse) HTML(name string, data any) error {
 	return res.Engine.Template.ExecuteTemplate(res.Writer, name, data)
 }
 
-var ErrorHTML = `<title>{{.code}}</title><div style=height:100vh;text-align:center;display:flex;flex-direction:column;align-items:center;justify-content:center><div style=line-height:48px;height:48px><style>@media (prefers-color-scheme:light){body{color:#000;background:#fff;margin:0}}@media (prefers-color-scheme:dark){body{color:#fff;background:#000;margin:0}}</style><h1 style="display:inline-block;margin:0 20px 0 0;padding-right:22px;font-size:24px;font-weight:500;vertical-align:top;border-right:1px solid #808080">{{ .code }}</h1><h2 style="display:inline-block;margin:10px 0 10px 0;font-size:16px;font-weight:400;line-height:28px;vertical-align:top">{{.message }}</h2></div></div>`
+var ErrorHTML = `<title>{{.code}} {{.message}}</title><div style=height:100vh;text-align:center;display:flex;flex-direction:column;align-items:center;justify-content:center><div style=line-height:48px;height:48px><style>@media (prefers-color-scheme:light){body{color:#000;background:#fff;margin:0}}@media (prefers-color-scheme:dark){body{color:#fff;background:#000;margin:0}}</style><h1 style="display:inline-block;margin:0 20px 0 0;padding-right:22px;font-size:2em;font-weight:500;vertical-align:top;border-right:1px solid #808080">{{ .code }}</h1><h2 style="display:inline-block;margin:10px 0 10px 0;font-size:1.5em;font-weight:400;line-height:28px;vertical-align:top">{{.message}}</h2></div></div>`
 
 // Error set status and send HTML with code, message
 func (res Response) Error(code int, message string) {
