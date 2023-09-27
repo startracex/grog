@@ -10,7 +10,6 @@ type Response = *HttpResponse
 
 type HttpResponse struct {
 	Writer http.ResponseWriter
-	// Template template.Template
 	Engine *Engine
 }
 
@@ -87,7 +86,7 @@ var ErrorHTML = `<title>{{.code}}</title><div style=height:100vh;text-align:cent
 func (res Response) Error(code int, message string) {
 	res.Status(code)
 	res.ContentType("text/html")
-	t, _ := template.New("e").Parse(ErrorHTML)
+	t, _ := template.New("goup").Parse(ErrorHTML)
 	_ = t.Execute(res.Writer, map[string]any{
 		"code":    code,
 		"message": message,
