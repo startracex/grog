@@ -20,7 +20,7 @@ func TestRun(t *testing.T) {
 			t.Log(err)
 		}
 	}()
-	e.Add(&Forward{
+	e.AddOne(&Forward{
 		Form:   &URL{Host: host + from},
 		Target: &URL{Host: host + to},
 	})

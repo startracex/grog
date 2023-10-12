@@ -23,8 +23,15 @@ type Forward struct {
 	Target  *URL
 }
 
-// Add a new forward
-func (e *Engine) Add(fw *Forward) {
+// Add multiple forward rules
+func (e *Engine) Add(fws ...*Forward) {
+	for _, fw := range fws {
+		e.AddOne(fw)
+	}
+}
+
+// AddOne a new forward
+func (e *Engine) AddOne(fw *Forward) {
 	key := fw.Form.Host
 	port := fw.Form.Port()
 	if fw.Target.Scheme == "" {
