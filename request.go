@@ -136,26 +136,26 @@ func (r *HttpRequest) Body() io.ReadCloser {
 // StringBody get body as buffer.String()
 func (r *HttpRequest) StringBody() string {
 	buf := r.Engine.Pool.Get().(*bytes.Buffer)
+	defer r.Engine.Pool.Put(buf)
 	buf.Reset()
 	_, err := io.Copy(buf, r.OriginalRequest.Body)
 	if err != nil {
 		return ""
 	}
 	b := buf.String()
-	r.Engine.Pool.Put(buf)
 	return b
 }
 
 // BytesBody get body as buffer.Bytes()
 func (r *HttpRequest) BytesBody() []byte {
 	buf := r.Engine.Pool.Get().(*bytes.Buffer)
+	r.Engine.Pool.Put(buf)
 	buf.Reset()
 	_, err := io.Copy(buf, r.OriginalRequest.Body)
 	if err != nil {
 		return []byte{}
 	}
 	b := buf.Bytes()
-	r.Engine.Pool.Put(buf)
 	return b
 }
 
