@@ -89,12 +89,14 @@ func (group *RouterGroup) ANY(pattern string, handlers ...HandlerFunc) {
 	group.ALL(pattern, handlers...)
 }
 
-// NoRoute accept not found subpath handler
+// NoRoute accept not found route subpath handler
 func (group *RouterGroup) NoRoute(handlers ...HandlerFunc) {
-	if len(handlers) == 0 {
-		panic("NoRoute is missing handler ")
-	}
-	group.ANY("/*url", handlers...)
+	group.engine.noRouteHandler = handlers
+}
+
+// NoMethod accept not found method subpath handler
+func (group *RouterGroup) NoMethod(handlers ...HandlerFunc) {
+	group.engine.noMethodHandler = handlers
 }
 
 // Public handle directory, or file

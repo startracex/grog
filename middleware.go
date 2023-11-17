@@ -31,7 +31,7 @@ func Recovery() HandlerFunc {
 				message := fmt.Sprintf("%s", err)
 				log.Printf("%s\n\n", trace(message))
 				if req.Method == GET {
-					res.ErrorStatusText(500)
+					res.ErrorStatusTextHTML(500)
 				} else {
 					res.Status(500)
 				}

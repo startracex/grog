@@ -8,13 +8,13 @@ import (
 type handlersInMethod = map[string][]HandlerFunc
 
 type Router struct {
-	roots    map[string]*core.Node
+	root     *core.Node
 	handlers map[string]handlersInMethod
 }
 
 func NewRouter() *Router {
 	return &Router{
-		roots:    make(map[string]*core.Node),
+		root:     &core.Node{},
 		handlers: make(map[string]handlersInMethod),
 	}
 }
@@ -35,26 +35,18 @@ func parsePattern(pattern string) []string {
 
 func (r *Router) AddRoute(method string, pattern string, handlers []HandlerFunc) {
 	parts := parsePattern(pattern)
-	_, ok := r.roots[method]
-	if !ok {
-		r.roots[method] = &core.Node{}
-	}
-	r.roots[method].Insert(pattern, parts, 0)
+	r.root.Insert(pattern, parts, 0)
 	if r.handlers[pattern] == nil {
 		r.handlers[pattern] = make(map[string][]HandlerFunc)
 	}
 	r.handlers[pattern][method] = handlers
 }
 
-func (r *Router) getRoute(method string, path string) (*core.Node, map[string]string) {
+func (r *Router) getRoute(path string) (*core.Node, map[string]string) {
 	searchParts := parsePattern(path)
-	params := make(map[string]string)
-	root, ok := r.roots[method]
-	if !ok {
-		return nil, nil
-	}
-	n := root.Search(searchParts, 0)
+	n := r.root.Search(searchParts, 0)
 	if n != nil {
+		params := make(map[string]string)
 		parts := parsePattern(n.Pattern)
 		for index, part := range parts {
 			if part[0] == ':' {
@@ -75,20 +67,17 @@ func (r *Router) getRoute(method string, path string) (*core.Node, map[string]st
 func (r *Router) Handle(req *HttpRequest, res *HttpResponse) {
 	method := req.Method
 	path := req.URL().Path
-	node, params := r.getRoute(method, path)
+	node, params := r.getRoute(path)
 	if node != nil {
-		req.Params = params
-		req.Handlers = append(req.Handlers, r.handlers[node.Pattern][method]...)
-		req.Next(res)
-	} else {
-		if req.Method == GET {
-			res.ErrorStatusText(404)
-			req.Abort()
-			return
+		handlers, ok := r.handlers[node.Pattern][method]
+		if ok {
+			req.Params = params
+			req.Handlers = append(req.Handlers, handlers...)
 		} else {
-			res.Status(404)
-			req.Abort()
-			return
+			req.Handlers = req.Engine.noMethodHandler
 		}
+	} else {
+		req.Handlers = req.Engine.noRouteHandler
 	}
+	req.Next(res)
 }

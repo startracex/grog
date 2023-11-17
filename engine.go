@@ -11,18 +11,20 @@ import (
 
 type Engine struct {
 	*RouterGroup
-	router   *Router
-	groups   []*RouterGroup
-	Pool     sync.Pool
-	Template template.Template
-	FuncMap  template.FuncMap
+	router          *Router
+	groups          []*RouterGroup
+	Pool            sync.Pool
+	Template        template.Template
+	FuncMap         template.FuncMap
+	noRouteHandler  []HandlerFunc
+	noMethodHandler []HandlerFunc
 }
 
 // ServeHTTP for http.ListenAndServe
 func (e *Engine) ServeHTTP(res http.ResponseWriter, req *http.Request) {
 	var middlewares []HandlerFunc
 	for _, group := range e.groups {
-		if strings.HasPrefix(req.URL.Path, group.prefix) {
+		if strings.HasPrefix(req.URL.Path, group.prefix+"/") {
 			middlewares = append(middlewares, group.middlewares...)
 		}
 	}
@@ -42,6 +44,20 @@ func New() *Engine {
 	engine.Pool.New = func() any {
 		return bytes.NewBuffer(make([]byte, 4096))
 	}
+	engine.NoRoute(func(request Request, response Response) {
+		if request.Method == "GET" {
+			response.ErrorStatusTextHTML(404)
+			return
+		}
+		response.ErrorStatusText(404)
+	})
+	engine.NoMethod(func(request Request, response Response) {
+		if request.Method == "GET" {
+			response.ErrorStatusTextHTML(405)
+			return
+		}
+		response.ErrorStatusText(405)
+	})
 	return engine
 }
 
