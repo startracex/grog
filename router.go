@@ -33,8 +33,16 @@ func parsePattern(pattern string) []string {
 	return parts
 }
 
+func SplitPattern(s string) []string {
+	return parsePattern(s)
+}
+
+func SplitSlash(s string) []string {
+	return strings.Split(s, "/")[1:]
+}
+
 func (r *Router) AddRoute(method string, pattern string, handlers []HandlerFunc) {
-	parts := parsePattern(pattern)
+	parts := SplitPattern(pattern)
 	r.root.Insert(pattern, parts, 0)
 	if r.handlers[pattern] == nil {
 		r.handlers[pattern] = make(map[string][]HandlerFunc)
@@ -42,12 +50,12 @@ func (r *Router) AddRoute(method string, pattern string, handlers []HandlerFunc)
 	r.handlers[pattern][method] = handlers
 }
 
-func (r *Router) getRoute(path string) (*core.Node, map[string]string) {
-	searchParts := parsePattern(path)
+func (r *Router) GetRoute(path string) (*core.Node, map[string]string) {
+	searchParts := SplitSlash(path)
 	n := r.root.Search(searchParts, 0)
 	if n != nil {
 		params := make(map[string]string)
-		parts := parsePattern(n.Pattern)
+		parts := SplitPattern(n.Pattern)
 		for index, part := range parts {
 			if part[0] == ':' {
 				params[part[1:]] = searchParts[index]
@@ -67,7 +75,7 @@ func (r *Router) getRoute(path string) (*core.Node, map[string]string) {
 func (r *Router) Handle(req *HttpRequest, res *HttpResponse) {
 	method := req.Method
 	path := req.URL().Path
-	node, params := r.getRoute(path)
+	node, params := r.GetRoute(path)
 	if node != nil {
 		handlers, ok := r.handlers[node.Pattern][method]
 		if ok {
