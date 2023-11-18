@@ -6,8 +6,6 @@ import (
 	"net/http"
 )
 
-type KV = map[string]any
-
 type Response = *HttpResponse
 
 type HttpResponse struct {

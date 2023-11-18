@@ -5,6 +5,8 @@ import (
 	"net/http"
 )
 
+type KV = map[string]any
+
 // Upgrade to *toolkit.WS
 func Upgrade(req Request, res Response) *toolkit.WS {
 	return toolkit.Upgrade(res.Writer, req.OriginalRequest)
