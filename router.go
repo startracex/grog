@@ -21,7 +21,7 @@ func NewRouter() *Router {
 
 func parsePattern(pattern string) []string {
 	vs := strings.Split(pattern, "/")
-	parts := make([]string, 0)
+	var parts []string
 	for _, item := range vs {
 		if item != "" {
 			parts = append(parts, item)
@@ -38,7 +38,14 @@ func SplitPattern(s string) []string {
 }
 
 func SplitSlash(s string) []string {
-	return strings.Split(s, "/")[1:]
+	vs := strings.Split(s, "/")
+	var parts []string
+	for _, item := range vs {
+		if item != "" {
+			parts = append(parts, item)
+		}
+	}
+	return parts
 }
 
 func (r *Router) AddRoute(method string, pattern string, handlers []HandlerFunc) {
