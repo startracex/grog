@@ -22,18 +22,23 @@ type Engine struct {
 
 // ServeHTTP for http.ListenAndServe
 func (e *Engine) ServeHTTP(res http.ResponseWriter, req *http.Request) {
-	var middlewares []HandlerFunc
+	newRequest := NewRequest(req)
+	newRequest.Engine = e
+	prefix := ""
 	for _, group := range e.groups {
 		if strings.HasPrefix(req.URL.Path, group.prefix+"/") {
-			middlewares = append(middlewares, group.middlewares...)
+			newRequest.appendHandlers(group.middlewares)
+			prefix = group.prefix
 		}
 	}
-	q := NewRequest(req)
-	q.Handlers = middlewares
-	q.Engine = e
-	p := NewResponse(res)
-	p.Engine = e
-	e.router.Handle(&q, &p)
+
+	newResponse := NewResponse(res)
+	newResponse.Engine = e
+	if e.router.re {
+		e.router.HandlePrefix(&newRequest, &newResponse, prefix)
+		return
+	}
+	e.router.Handle(&newRequest, &newResponse)
 }
 
 // New create engine
@@ -66,6 +71,18 @@ func Default() *Engine {
 	engine := New()
 	engine.Use(Logger(1), Recovery())
 	return engine
+}
+
+// BaseURL set engine's prefix
+func (e *Engine) BaseURL(base string) {
+	if base != "/" {
+		e.prefix = base
+	}
+}
+
+// UseRegex enable router regex match
+func (e *Engine) UseRegex() {
+	e.router.re = true
 }
 
 // SetPoolNew Replace the default NEW func

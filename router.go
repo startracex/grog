@@ -2,20 +2,45 @@ package goup
 
 import (
 	"github.com/startracex/goup/core"
+	"regexp"
 	"strings"
 )
 
-type handlersInMethod = map[string][]HandlerFunc
+// HandlersNest pattern -> method -> []HandlerFunc
+type HandlersNest map[string]map[string][]HandlerFunc
 
-type Router struct {
-	root     *core.Node
-	handlers map[string]handlersInMethod
+// push handlers
+func (h HandlersNest) push(pattern, method string, handlers []HandlerFunc) {
+	if _, ok := h[pattern]; !ok {
+		h[pattern] = make(map[string][]HandlerFunc)
+	}
+	h[pattern][method] = append(h[pattern][method], handlers...)
 }
 
+// get handlers and their exist
+func (h HandlersNest) get(pattern, method string) (bool, bool, []HandlerFunc) {
+	if _, ok := h[pattern]; !ok {
+		return false, false, nil
+	}
+	if _, ok := h[pattern][method]; !ok {
+		return true, false, nil
+	}
+	return true, true, h[pattern][method]
+}
+
+// Router type
+type Router struct {
+	// tire node
+	root     *core.Node
+	handlers HandlersNest
+	re       bool
+}
+
+// NewRouter create empty Router
 func NewRouter() *Router {
 	return &Router{
 		root:     &core.Node{},
-		handlers: make(map[string]handlersInMethod),
+		handlers: make(HandlersNest),
 	}
 }
 
@@ -48,15 +73,18 @@ func SplitSlash(s string) []string {
 	return parts
 }
 
+// AddRoute add a pattern -> method -> handlers
 func (r *Router) AddRoute(method string, pattern string, handlers []HandlerFunc) {
-	parts := SplitPattern(pattern)
-	r.root.Insert(pattern, parts, 0)
-	if r.handlers[pattern] == nil {
-		r.handlers[pattern] = make(map[string][]HandlerFunc)
+	if !r.re {
+		if strings.Contains(pattern, "/:") || strings.Contains(pattern, "/*") {
+			parts := SplitPattern(pattern)
+			r.root.Insert(pattern, parts, 0)
+		}
 	}
-	r.handlers[pattern][method] = handlers
+	r.handlers.push(pattern, method, handlers)
 }
 
+// GetRoute get match dynamic node and params
 func (r *Router) GetRoute(path string) (*core.Node, map[string]string) {
 	searchParts := SplitSlash(path)
 	n := r.root.Search(searchParts, 0)
@@ -80,19 +108,48 @@ func (r *Router) GetRoute(path string) (*core.Node, map[string]string) {
 
 // Handle request or not found
 func (r *Router) Handle(req *HttpRequest, res *HttpResponse) {
+	var key = req.Path
 	method := req.Method
-	path := req.URL().Path
-	node, params := r.GetRoute(path)
+	node, params := r.GetRoute(key)
+
 	if node != nil {
-		handlers, ok := r.handlers[node.Pattern][method]
-		if ok {
+		// dynamic router
+		key = node.Pattern
+	}
+
+	havePattern, haveMethod, handlers := r.handlers.get(key, method)
+	if havePattern {
+		if haveMethod {
 			req.Params = params
-			req.Handlers = append(req.Handlers, handlers...)
+			req.appendHandlers(handlers)
 		} else {
-			req.Handlers = req.Engine.noMethodHandler
+			req.appendHandlers(req.Engine.noMethodHandler)
 		}
 	} else {
-		req.Handlers = req.Engine.noRouteHandler
+		req.appendHandlers(req.Engine.noRouteHandler)
 	}
+
+	req.Next(res)
+}
+
+func (r *Router) HandlePrefix(req *HttpRequest, res *HttpResponse, prefix string) {
+	key := req.Path
+	method := req.Method
+	for regex, maps := range r.handlers {
+		if len(regex) < len(prefix) || len(regex) < len(key) {
+			continue
+		}
+		if match, _ := regexp.MatchString(regex[len(prefix):], key[len(prefix):]); match {
+			handlers, ok := maps[method]
+			if ok {
+				req.appendHandlers(handlers)
+			} else {
+				req.appendHandlers(req.Engine.noMethodHandler)
+			}
+			req.Next(res)
+			return
+		}
+	}
+	req.appendHandlers(req.Engine.noRouteHandler)
 	req.Next(res)
 }
