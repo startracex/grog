@@ -52,6 +52,11 @@ func (r *HttpRequest) Reset() {
 	r.index = -1
 }
 
+// appendHandlers append handler functions
+func (r *HttpRequest) appendHandlers(hs []HandlerFunc) {
+	r.Handlers = append(r.Handlers, hs...)
+}
+
 /* Quick usage */
 
 // URL get url
