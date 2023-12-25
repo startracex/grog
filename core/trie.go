@@ -33,7 +33,9 @@ func (n *Node) Insert(pattern string, parts []string, height int) {
 
 	child := n.findWildChild()
 	if child != nil && child.isWild && isWild {
-		panic(fmt.Sprintf("Same some pattern: %s, %s", part, child.part))
+		fmt.Println("WARNING: The following routes may conflict.")
+		warnConflict(child.Pattern, child.part)
+		warnConflict(pattern, part)
 	}
 
 	child = n.findSpecificChild(part)
@@ -162,4 +164,20 @@ func (n *Node) Sort() {
 			list[i].Sort()
 		}
 	}
+}
+
+func warnConflict(s, h string) {
+	indexOf := strings.Index(s, h)
+	lengthOf := len(h)
+	fmt.Println("  " + s)
+	fmt.Print("  ")
+	for indexOf > 0 {
+		fmt.Print(" ")
+		indexOf--
+	}
+	for lengthOf > 0 {
+		fmt.Print("^")
+		lengthOf--
+	}
+	fmt.Println()
 }
