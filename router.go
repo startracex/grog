@@ -18,14 +18,15 @@ func (h HandlersNest) push(pattern, method string, handlers []HandlerFunc) {
 }
 
 // get handlers and their exist
-func (h HandlersNest) get(pattern, method string) (bool, bool, []HandlerFunc) {
-	if _, ok := h[pattern]; !ok {
-		return false, false, nil
+func (h HandlersNest) get(pattern, method string) (bool, []HandlerFunc) {
+	hp, ok := h[pattern]
+	if ok {
+		hpm, ok := hp[method]
+		if ok {
+			return true, hpm
+		}
 	}
-	if _, ok := h[pattern][method]; !ok {
-		return true, false, nil
-	}
-	return true, true, h[pattern][method]
+	return false, nil
 }
 
 // Router type
@@ -44,60 +45,30 @@ func NewRouter() *Router {
 	}
 }
 
-func parsePattern(pattern string) []string {
-	vs := strings.Split(pattern, "/")
-	var parts []string
-	for _, item := range vs {
-		if item != "" {
-			parts = append(parts, item)
-			if item[0] == '*' {
-				break
-			}
-		}
-	}
-	return parts
-}
-
-func SplitPattern(s string) []string {
-	return parsePattern(s)
-}
-
-func SplitSlash(s string) []string {
-	vs := strings.Split(s, "/")
-	var parts []string
-	for _, item := range vs {
-		if item != "" {
-			parts = append(parts, item)
-		}
-	}
-	return parts
-}
-
 // AddRoute add a pattern -> method -> handlers
 func (r *Router) AddRoute(method string, pattern string, handlers []HandlerFunc) {
 	if !r.re {
-		if strings.Contains(pattern, "/:") || strings.Contains(pattern, "/*") {
-			parts := SplitPattern(pattern)
-			r.root.Insert(pattern, parts, 0)
-		}
+		r.root.Set(pattern)
 	}
 	r.handlers.push(pattern, method, handlers)
 }
 
 // GetRoute get match dynamic node and params
 func (r *Router) GetRoute(path string) (*core.Node, map[string]string) {
-	searchParts := SplitSlash(path)
-	n := r.root.Search(searchParts, 0)
+	searchParts := core.SplitSlash(path)
+	n := r.root.Get(path)
 	if n != nil {
 		params := make(map[string]string)
-		parts := SplitPattern(n.Pattern)
+		parts := core.SplitPattern(n.Pattern)
 		for index, part := range parts {
-			if part[0] == ':' {
-				params[part[1:]] = searchParts[index]
-			}
-			if part[0] == '*' && len(part) > 1 {
-				params[part[1:]] = strings.Join(searchParts[index:], "/")
-				break
+			isWild, wildKey, isMulti := core.WildOf(part)
+			if isWild {
+				if isMulti {
+					params[wildKey] = strings.Join(searchParts[index:], "/")
+					break
+				} else {
+					params[wildKey] = searchParts[index]
+				}
 			}
 		}
 		return n, params
@@ -108,17 +79,12 @@ func (r *Router) GetRoute(path string) (*core.Node, map[string]string) {
 
 // Handle request or not found
 func (r *Router) Handle(req *HttpRequest, res *HttpResponse) {
-	var key = req.Path
-	method := req.Method
-	node, params := r.GetRoute(key)
-
+	node, params := r.GetRoute(req.Path)
 	if node != nil {
-		// dynamic router
-		key = node.Pattern
-	}
+		pattern := node.Pattern
+		method := req.Method
 
-	havePattern, haveMethod, handlers := r.handlers.get(key, method)
-	if havePattern {
+		haveMethod, handlers := r.handlers.get(pattern, method)
 		if haveMethod {
 			req.Params = params
 			req.appendHandlers(handlers)
