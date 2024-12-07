@@ -106,7 +106,7 @@ func (group *RouterGroup) Public(pattern string, path string) {
 		panic(err)
 	}
 	defer f.Close()
-	fi, _ := f.Stat()
+	fi, err := f.Stat()
 	if err != nil {
 		panic(err)
 	}
