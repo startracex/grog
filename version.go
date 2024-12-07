@@ -1,3 +1,3 @@
 package goup
 
-const Version = "0.0.14"
+const Version = "0.1.0"
