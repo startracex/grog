@@ -1,4 +1,4 @@
-package core
+package goup
 
 import (
 	"sort"
@@ -11,55 +11,55 @@ const (
 	matchMulti
 )
 
-type Node struct {
+type RouteTree struct {
 	Pattern  string
 	part     string
-	children []*Node
+	children []*RouteTree
 	match    int
 	sorted   bool
 }
 
-func (n *Node) Set(s string) {
-	n.Insert(s, SplitSlash(s), 0)
+func (rt *RouteTree) Set(s string) {
+	rt.Insert(s, SplitSlash(s), 0)
 }
 
-func (n *Node) Get(s string) *Node {
-	return n.Search(SplitSlash(s), 0)
+func (rt *RouteTree) Get(s string) *RouteTree {
+	return rt.Search(SplitSlash(s), 0)
 }
 
-func (n *Node) Insert(pattern string, parts []string, height int) {
-	defer n.Sort()
+func (rt *RouteTree) Insert(pattern string, parts []string, height int) {
+	defer rt.Sort()
 
 	if len(parts) == height {
-		n.Pattern = pattern
+		rt.Pattern = pattern
 		return
 	}
 	part := parts[height]
-	spec := n.findStrict(part)
+	spec := rt.findStrict(part)
 	if spec == nil {
-		spec = &Node{
-			part:     part,
-			match:    Dynamic(part).matchType,
+		spec = &RouteTree{
+			part:  part,
+			match: Dynamic(part).matchType,
 		}
-		n.children = append(n.children, spec)
-		n.sorted = false
+		rt.children = append(rt.children, spec)
+		rt.sorted = false
 	}
 	spec.Insert(pattern, parts, height+1)
 }
 
-func (n *Node) Search(parts []string, height int) *Node {
-	if !n.sorted {
-		n.Sort()
+func (rt *RouteTree) Search(parts []string, height int) *RouteTree {
+	if !rt.sorted {
+		rt.Sort()
 	}
 
-	if len(parts) == height || Dynamic(n.part).matchType == matchMulti {
-		if n.Pattern == "" {
+	if len(parts) == height || Dynamic(rt.part).matchType == matchMulti {
+		if rt.Pattern == "" {
 			return nil
 		}
-		return n
+		return rt
 	}
 	part := parts[height]
-	children := n.filterWild(part)
+	children := rt.filterWild(part)
 	for _, child := range children {
 		result := child.Search(parts, height+1)
 		if result != nil {
@@ -69,8 +69,8 @@ func (n *Node) Search(parts []string, height int) *Node {
 	return nil
 }
 
-func (n *Node) findStrict(part string) *Node {
-	for _, child := range n.children {
+func (rt *RouteTree) findStrict(part string) *RouteTree {
+	for _, child := range rt.children {
 		if child.part == part {
 			return child
 		}
@@ -78,9 +78,9 @@ func (n *Node) findStrict(part string) *Node {
 	return nil
 }
 
-func (n *Node) filterWild(part string) []*Node {
-	nodes := make([]*Node, 0)
-	for _, child := range n.children {
+func (rt *RouteTree) filterWild(part string) []*RouteTree {
+	nodes := make([]*RouteTree, 0)
+	for _, child := range rt.children {
 		if child.part == part || child.match > 0 {
 			nodes = append(nodes, child)
 		}
@@ -88,17 +88,17 @@ func (n *Node) filterWild(part string) []*Node {
 	return nodes
 }
 
-func (n *Node) Sort() {
-	if n == nil {
+func (rt *RouteTree) Sort() {
+	if rt == nil {
 		return
 	}
-	sort.Slice(n.children, func(a, b int) bool {
-		return n.children[a].match < n.children[b].match
+	sort.Slice(rt.children, func(a, b int) bool {
+		return rt.children[a].match < rt.children[b].match
 	})
-	for _, child := range n.children {
+	for _, child := range rt.children {
 		child.Sort()
 	}
-	n.sorted = true
+	rt.sorted = true
 }
 
 // func warnConflict(s, h string) {
