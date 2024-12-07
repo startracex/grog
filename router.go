@@ -3,7 +3,6 @@ package goup
 import (
 	"github.com/startracex/goup/core"
 	"regexp"
-	"strings"
 )
 
 // HandlersNest pattern -> method -> []HandlerFunc
@@ -55,25 +54,13 @@ func (r *Router) AddRoute(method string, pattern string, handlers []HandlerFunc)
 
 // GetRoute get match dynamic node and params
 func (r *Router) GetRoute(path string) (*core.Node, map[string]string) {
-	searchParts := core.SplitSlash(path)
 	n := r.root.Get(path)
 	if n != nil {
-		params := make(map[string]string)
-		parts := core.SplitPattern(n.Pattern)
-		for index, part := range parts {
-			isWild, wildKey, isMulti := core.WildOf(part)
-			if isWild {
-				if isMulti {
-					params[wildKey] = strings.Join(searchParts[index:], "/")
-					break
-				} else {
-					params[wildKey] = searchParts[index]
-				}
-			}
-		}
-		return n, params
+		return n, core.ParseParams(
+			path,
+			n.Pattern,
+		)
 	}
-
 	return nil, nil
 }
 
@@ -85,8 +72,8 @@ func (r *Router) Handle(req *HttpRequest, res *HttpResponse) {
 		method := req.Method
 
 		haveMethod, handlers := r.handlers.get(pattern, method)
+		req.Params = params
 		if haveMethod {
-			req.Params = params
 			req.appendHandlers(handlers)
 		} else {
 			req.appendHandlers(req.Engine.noMethodHandler)
