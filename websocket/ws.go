@@ -1,4 +1,4 @@
-package toolkit
+package websocket
 
 import (
 	"bufio"
@@ -12,36 +12,28 @@ import (
 	"time"
 )
 
-const A = "258EAFA5-E914-47DA-95CA-C5AB0DC85B11"
+const afterKey = "258EAFA5-E914-47DA-95CA-C5AB0DC85B11"
 
 const (
-	TEXT = 1
-
+	TEXT   = 1
 	BINARY = 2
-
-	CLOSE = 8
-
-	PING = 9
-
-	PONG = 10
+	CLOSE  = 8
+	PING   = 9
+	PONG   = 10
 )
 
 var (
-	OPCODE0  = errors.New("OPCODE 0")
-	OPCODE1  = errors.New("OPCODE 1")
-	OPCODE2  = errors.New("OPCODE 2")
-	OPCODE8  = errors.New("OPCODE 8")
-	OPCODE9  = errors.New("OPCODE 9")
-	OPCODE10 = errors.New("OPCODE 10")
-
+	OPCODE0   = errors.New("OPCODE 0")
+	OPCODE1   = errors.New("OPCODE 1")
+	OPCODE2   = errors.New("OPCODE 2")
+	OPCODE8   = errors.New("OPCODE 8")
+	OPCODE9   = errors.New("OPCODE 9")
+	OPCODE10  = errors.New("OPCODE 10")
 	OPCODE3_7 = errors.New("OPCODE 3-7")
-
-	FINNOT1 = errors.New("FIN NOT 1")
-
-	RSVNOT0 = errors.New("RSV NOT 0")
+	FINNOT1   = errors.New("FIN NOT 1")
+	RSVNOT0   = errors.New("RSV NOT 0")
+	CLOSED    = errors.New("CLOSED")
 )
-
-var CLOSED = errors.New("CLOSED")
 
 // IsWebsocketUpgradeRequest check if request has websocket header ("Upgrade": "websocket")
 func IsWebsocketUpgradeRequest(r *http.Request) bool {
@@ -55,9 +47,8 @@ func GetKey(r *http.Request) string {
 // GetAccept get accept from key
 func GetAccept(key string) string {
 	sha := sha1.New()
-	sha.Write([]byte(key + A))
-	s1 := sha.Sum(nil)
-	return base64.StdEncoding.EncodeToString(s1)
+	sha.Write([]byte(key + afterKey))
+	return base64.StdEncoding.EncodeToString(sha.Sum(nil))
 }
 
 // ReadFrame read bytes from reader
@@ -230,13 +221,13 @@ func NewWS() *WS {
 func (ws *WS) Upgrade(w http.ResponseWriter, r *http.Request) {
 	if IsWebsocketUpgradeRequest(r) {
 		key := GetKey(r)
-		Accept := GetAccept(key)
+		accept := GetAccept(key)
 		hijack := w.(http.Hijacker)
 		conn, _, err := hijack.Hijack()
 		if err != nil {
 			return
 		}
-		_, err = conn.Write([]byte("HTTP/1.1 101 Switching Protocols\nUpgrade: websocket\nConnection: Upgrade\nSec-WebSocket-Accept: " + Accept + "\n\n"))
+		_, err = conn.Write([]byte("HTTP/1.1 101 Switching Protocols\nUpgrade: websocket\nConnection: Upgrade\nSec-WebSocket-accept: " + accept + "\n\n"))
 		if err != nil {
 			return
 		}
@@ -279,7 +270,12 @@ func (ws *WS) Message() ([]byte, error) {
 
 // Close connection
 func (ws *WS) Close() error {
-	return ws.Conn.Close()
+	if ws.Closed {
+		return CLOSED
+	} else {
+		ws.Closed = true
+		return ws.Conn.Close()
+	}
 }
 
 func (ws *WS) Ping(bt []byte, d time.Duration) error {
@@ -291,67 +287,4 @@ func (ws *WS) Ping(bt []byte, d time.Duration) error {
 
 func (ws *WS) Pone() error {
 	return Pone(ws.Conn)
-}
-
-// IsOpen return ws.Closed equals true
-func (ws *WS) IsOpen() bool {
-	return !ws.Closed
-}
-
-type WSGroup struct {
-	list []*WS
-}
-
-// NewWSGroup return empty WSGroup
-func NewWSGroup() *WSGroup {
-	return &WSGroup{}
-}
-
-// Add connection to group
-func (w *WSGroup) Add(ws *WS) {
-	w.list = append(w.list, ws)
-}
-
-// Send data to all connections
-func (w *WSGroup) Send(data []byte, t int) error {
-	var err error = nil
-	for _, ws := range w.list {
-		err = ws.Send(data, t)
-		if err != nil {
-			ws.Closed = true
-		}
-	}
-	return err
-}
-
-// Message wait for any message
-func (w *WSGroup) Message() ([]byte, error) {
-	dataCh := make(chan []byte)
-	errCh := make(chan error)
-	for _, ws := range w.list {
-		go func(ws *WS) {
-			data, err := ws.Message()
-			if err != nil {
-				ws.Closed = true
-			}
-			dataCh <- data
-			errCh <- err
-		}(ws)
-	}
-	return <-dataCh, <-errCh
-}
-
-// Clean remove connection which has Closed:true
-func (w *WSGroup) Clean() int {
-	f := w.Len()
-	for i := f - 1; i >= 0; i-- {
-		if w.list[i].Closed {
-			w.list = append(w.list[:i], w.list[i+1:]...)
-		}
-	}
-	return f - w.Len()
-}
-
-func (w *WSGroup) Len() int {
-	return len(w.list)
 }

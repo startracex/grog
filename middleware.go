@@ -2,20 +2,17 @@ package goup
 
 import (
 	"fmt"
-	"github.com/startracex/goup/toolkit"
+	"github.com/startracex/goup/cors"
 	"log"
 	"runtime"
 	"strings"
 	"time"
 )
 
-// Logger record the request path, method, custom time
-func Logger(flag ...int) HandlerFunc {
-	d := 0
-	for _, v := range flag {
-		d = d | v
-	}
-	log.SetFlags(d)
+var DefaultMiddleware = []HandlerFunc{Logger(), Recovery(), AutoOptions()}
+
+// Logger record the request path, method
+func Logger() HandlerFunc {
 	return func(req *HttpRequest, res *HttpResponse) {
 		t := time.Now()
 		req.Next(res)
@@ -30,32 +27,36 @@ func Recovery() HandlerFunc {
 			if err := recover(); err != nil {
 				message := fmt.Sprintf("%s", err)
 				log.Printf("%s\n\n", trace(message))
-				if req.Method == GET {
-					res.ErrorStatusTextHTML(500)
-				} else {
-					res.Status(500)
-				}
+				res.StatusText(500)
 			}
 		}()
 		req.Next(res)
 	}
 }
 
-// Cors adds multiple AllowOrigin or "*" and allows all other fields
-func Cors(s ...string) HandlerFunc {
-	c := toolkit.CorsAllowAll()
-	if len(s) > 0 {
-		c.AllowOrigin = append([]string{}, s...)
+func Cors(c *cors.Cors) HandlerFunc {
+	return func(req Request, res Response) {
+		c.WriteHeader(res.Header())
+		req.Next(res)
 	}
-	return SetCors(*c)
 }
 
-type CorsConfig = toolkit.Cors
-
-// SetCors get the cors configuration from the parameter c
-func SetCors(c CorsConfig) HandlerFunc {
+// AutoOptions handle OPTIONS request, allow methods which have been registered
+func AutoOptions() HandlerFunc {
 	return func(req Request, res Response) {
-		_ = c.WriteHeader(req.Header(), res.Header())
+		res.SetHeader("Access-Control-Allow-Origin", req.Origin())
+		if req.Method == OPTIONS {
+			methods := strings.Join(req.Engine.router.handlers.allMethods(req.Path), ", ")
+			if methods == "" {
+				res.WriteHeader(404)
+				return
+			}
+			res.SetHeader("Access-Control-Allow-Methods", methods)
+			res.SetHeader("Access-Control-Allow-Headers", "*")
+			res.SetHeader("Access-Control-Allow-Credentials", "true")
+			res.WriteHeader(204)
+			return
+		}
 		req.Next(res)
 	}
 }

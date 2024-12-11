@@ -20,7 +20,7 @@ func (group *RouterGroup) Group(prefix string, middlewares ...HandlerFunc) *Rout
 }
 
 func (group *RouterGroup) AddRoute(method string, pattern string, handlers []HandlerFunc) {
-	group.engine.router.AddRoute(method, group.prefix+pattern, handlers)
+	group.engine.router.register(method, group.prefix+pattern, handlers)
 }
 
 func (group *RouterGroup) Use(middlewares ...HandlerFunc) {

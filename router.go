@@ -7,29 +7,49 @@ import (
 // HandlersNest pattern -> method -> []HandlerFunc
 type HandlersNest map[string]map[string][]HandlerFunc
 
-// push handlers
-func (h HandlersNest) push(pattern, method string, handlers []HandlerFunc) {
+// append handlers
+func (h HandlersNest) append(pattern, method string, handlers []HandlerFunc) {
 	if _, ok := h[pattern]; !ok {
 		h[pattern] = make(map[string][]HandlerFunc)
 	}
 	h[pattern][method] = append(h[pattern][method], handlers...)
 }
 
-// get handlers and their exist
-func (h HandlersNest) get(pattern, method string) (bool, []HandlerFunc) {
+func (h HandlersNest) hasPattern(pattern string) bool {
+	_, ok := h[pattern]
+	return ok
+}
+
+func (h HandlersNest) hasMethod(pattern, method string) bool {
+	if h.hasPattern(pattern) {
+		_, ok := h[pattern][method]
+		return ok
+	}
+	return false
+}
+
+func (h HandlersNest) allPatterns() []string {
+	keys := make([]string, 0, len(h))
+	for k := range h {
+		keys = append(keys, k)
+	}
+	return keys
+}
+
+func (h HandlersNest) allMethods(pattern string) []string {
 	hp, ok := h[pattern]
 	if ok {
-		hpm, ok := hp[method]
-		if ok {
-			return true, hpm
+		keys := make([]string, 0, len(hp))
+		for k := range hp {
+			keys = append(keys, k)
 		}
+		return keys
 	}
-	return false, nil
+	return nil
 }
 
 // Router type
 type Router struct {
-	// tire node
 	root     *RouteTree
 	handlers HandlersNest
 	re       bool
@@ -43,36 +63,24 @@ func NewRouter() *Router {
 	}
 }
 
-// AddRoute add a pattern -> method -> handlers
-func (r *Router) AddRoute(method string, pattern string, handlers []HandlerFunc) {
+// register add a pattern -> method -> handlers
+func (r *Router) register(method string, pattern string, handlers []HandlerFunc) {
 	if !r.re {
-		r.root.Set(pattern)
+		r.root.Insert(pattern, SplitSlash(pattern), 0)
 	}
-	r.handlers.push(pattern, method, handlers)
-}
-
-// GetRoute get match dynamic node and params
-func (r *Router) GetRoute(path string) (*RouteTree, map[string]string) {
-	n := r.root.Get(path)
-	if n != nil {
-		return n, ParseParams(
-			path,
-			n.Pattern,
-		)
-	}
-	return nil, nil
+	r.handlers.append(pattern, method, handlers)
 }
 
 // Handle request or not found
 func (r *Router) Handle(req *HttpRequest, res *HttpResponse) {
-	node, params := r.GetRoute(req.Path)
+	path := req.Path
+	node := r.root.Search(SplitSlash(path), 0)
 	if node != nil {
 		pattern := node.Pattern
 		method := req.Method
-
-		haveMethod, handlers := r.handlers.get(pattern, method)
-		req.Params = params
-		if haveMethod {
+		req.Params = ParseParams(path, pattern)
+		handlers, ok := r.handlers[pattern][method]
+		if ok {
 			req.appendHandlers(handlers)
 		} else {
 			req.appendHandlers(req.Engine.noMethodHandler)

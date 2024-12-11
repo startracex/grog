@@ -19,12 +19,7 @@ func NewResponse(res http.ResponseWriter) HttpResponse {
 	}
 }
 
-/* Quick usage */
-
-// Status write status code
-func (res HttpResponse) Status(code int) HttpResponse {
-	return res.WriteHeader(code)
-}
+/* Status */
 
 // With write header and call fn
 // It helps you fill in the header and execute the callback fn
@@ -33,11 +28,24 @@ func (res HttpResponse) With(code int, fn func()) {
 	fn()
 }
 
+// StatusText send code http.StatusText(code)
+func (res Response) StatusText(code int) {
+	res.WriteHeader(code)
+	res.String("%d %s", code, http.StatusText(code)+".")
+}
+
+// Status is alias of WriteHeader
+func (res HttpResponse) Status(code int) HttpResponse {
+	return res.WriteHeader(code)
+}
+
 // WriteHeader write status code
 func (res HttpResponse) WriteHeader(code int) HttpResponse {
 	res.Writer.WriteHeader(code)
 	return res
 }
+
+/* Write */
 
 // Write call Writer.Write
 func (res HttpResponse) Write(data []byte) (int, error) {
@@ -51,30 +59,13 @@ func (res HttpResponse) Byte(data []byte) (int, error) {
 
 // String write string
 func (res HttpResponse) String(format string, a ...any) (int, error) {
+	if len(a) == 0 {
+		return fmt.Fprint(res.Writer, format)
+	}
 	return fmt.Fprintf(res.Writer, format, a...)
 }
 
-// Header get header
-func (res HttpResponse) Header() http.Header {
-	return res.Writer.Header()
-}
-
-// SetHeader set a header
-func (res HttpResponse) SetHeader(key, value string) HttpResponse {
-	res.Writer.Header().Set(key, value)
-	return res
-}
-
-// ContentType set header "Content-Type"
-func (res HttpResponse) ContentType(value string) {
-	res.Writer.Header().Set("Content-Type", value)
-}
-
-// SetCookie set a cookie
-func (res HttpResponse) SetCookie(cookie *http.Cookie) HttpResponse {
-	http.SetCookie(res.Writer, cookie)
-	return res
-}
+/* Data encode */
 
 // JSON send JSON encoded data
 func (res HttpResponse) JSON(data any) error {
@@ -89,22 +80,55 @@ func (res HttpResponse) HTML(name string, data any) error {
 	return res.Engine.Template.ExecuteTemplate(res.Writer, name, data)
 }
 
-// ErrorStatusText send code http.StatusText(code)
-func (res Response) ErrorStatusText(code int) {
-	_, _ = res.String("%d %s", code, http.StatusText(code)+".")
+/* Cookies */
+
+// SetCookie set a cookie
+func (res HttpResponse) SetCookie(cookie *http.Cookie) HttpResponse {
+	http.SetCookie(res.Writer, cookie)
+	return res
 }
 
-// ErrorHTML error page's html
-var ErrorHTML = `<title>%d %s</title><div style="height:100vh;text-align:center;display:flex;flex-direction:column;align-items:center;justify-content:center"><div style="line-height:48px;height:48px"><style>@media (prefers-color-scheme:light){body{color:#000;background:#fff;margin:0}}@media (prefers-color-scheme:dark){body{color:#fff;background:#000;margin:0}}</style><h1 style="display:inline-block;margin:0 20px 0 0;padding-right:22px;font-weight:500;vertical-align:top;border-right:1px solid #808080">%d</h1><h2 style="display:inline-block;margin:10px 0 10px 0;font-weight:400;line-height:28px;vertical-align:top">%s</h2></div></div>`
+/* Headers */
 
-// ErrorHTML set status and send HTML with code, message
-func (res Response) ErrorHTML(code int, message string) {
-	res.Status(code)
-	res.ContentType("text/html")
-	_, _ = res.String(ErrorHTML, code, message, code, message)
+// Header get header
+func (res HttpResponse) Header() http.Header {
+	return res.Writer.Header()
 }
 
-// ErrorStatusTextHTML call ErrorHTML(code, http.StatusText(code)+".")
-func (res Response) ErrorStatusTextHTML(code int) {
-	res.ErrorHTML(code, http.StatusText(code)+".")
+// SetHeader set a header
+func (res HttpResponse) SetHeader(key, value string) HttpResponse {
+	res.Header().Set(key, value)
+	return res
+}
+
+// AddHeader add a header
+func (res HttpResponse) AddHeader(key, value string) HttpResponse {
+	res.Header().Add(key, value)
+	return res
+}
+
+// DeleteHeader delete a header
+func (res HttpResponse) DeleteHeader(key string) HttpResponse {
+	res.Header().Del(key)
+	return res
+}
+
+// Authorization set header "Authorization"
+func (res HttpResponse) Authorization(scheme, parameters string) {
+	res.SetHeader("Authorization", scheme+" "+parameters)
+}
+
+// BasicAuthorization set header "Authorization" with Basic scheme
+func (res HttpResponse) BasicAuthorization(parameters string) {
+	res.SetHeader("Authorization", "Basic: "+parameters)
+}
+
+// BearerAuthorization set header "Authorization" with Bearer scheme
+func (res HttpResponse) BearerAuthorization(parameters string) {
+	res.SetHeader("Authorization", "Bearer: "+parameters)
+}
+
+// ContentType set header "Content-Type"
+func (res HttpResponse) ContentType(value string) {
+	res.SetHeader("Content-Type", value)
 }

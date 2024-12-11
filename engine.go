@@ -2,7 +2,7 @@ package goup
 
 import (
 	"bytes"
-	"github.com/startracex/goup/toolkit"
+	"fmt"
 	"html/template"
 	"net/http"
 	"strings"
@@ -50,26 +50,18 @@ func New() *Engine {
 		return bytes.NewBuffer(make([]byte, 4096))
 	}
 	engine.NoRoute(func(request Request, response Response) {
-		if request.Method == "GET" {
-			response.ErrorStatusTextHTML(404)
-			return
-		}
-		response.ErrorStatusText(404)
+		response.StatusText(404)
 	})
 	engine.NoMethod(func(request Request, response Response) {
-		if request.Method == "GET" {
-			response.ErrorStatusTextHTML(405)
-			return
-		}
-		response.ErrorStatusText(405)
+		response.StatusText(405)
 	})
 	return engine
 }
 
-// Default use default middleware (Logger and Recovery)
+// Default use DefaultMiddleware
 func Default() *Engine {
 	engine := New()
-	engine.Use(Logger(1), Recovery())
+	engine.Use(DefaultMiddleware...)
 	return engine
 }
 
@@ -80,23 +72,14 @@ func (e *Engine) BaseURL(base string) {
 	}
 }
 
-// UseRegex enable router regex match
-func (e *Engine) UseRegex() {
+// EnableRegex enable router regex match
+func (e *Engine) EnableRegex() {
 	e.router.re = true
 }
 
 // SetPoolNew Replace the default NEW func
 func (e *Engine) SetPoolNew(f func() any) {
 	e.Pool.New = f
-}
-
-// LoadHTML load all files under paths
-func (e *Engine) LoadHTML(path ...string) {
-	var files []string
-	for _, v := range path {
-		files = append(files, toolkit.WalkFiles(v)...)
-	}
-	e.Template = *template.Must(template.New("").Funcs(e.FuncMap).ParseFiles(files...))
 }
 
 // LoadHTMLFiles load the path file
@@ -111,24 +94,29 @@ func (e *Engine) LoadFunc(funcMap template.FuncMap) {
 
 // ListenAndServe start a server
 func (e *Engine) ListenAndServe(addr string) error {
-	if len(addr) > 0 && addr[0] != ':' {
-		addr = ":" + addr
-	}
-	return http.ListenAndServe(addr, e)
+	return http.ListenAndServe(mustPort(addr), e)
 }
 
 // Run call ListenAndServe or ListenAndServeTLS if it has filePath slice
 func (e *Engine) Run(addr string, filePath ...string) error {
+	addr = mustPort(addr)
 	if len(filePath) > 1 {
+		fmt.Printf("Listen and serve TLS at https://127.0.0.1%s\n", addr)
 		return e.ListenAndServeTLS(addr, filePath[0], filePath[1])
 	}
+	fmt.Printf("Listen and serve at http://127.0.0.1%s\n", addr)
 	return e.ListenAndServe(addr)
 }
 
 // ListenAndServeTLS start a server with TLS
 func (e *Engine) ListenAndServeTLS(addr, cert, key string) error {
-	if len(addr) > 0 && addr[0] != ':' {
-		addr = ":" + addr
+	return http.ListenAndServeTLS(mustPort(addr), cert, key, e)
+}
+
+// mustPort make sure addr is a valid port
+func mustPort(addr string) string {
+	if !strings.HasPrefix(addr, ":") {
+		return ":" + addr
 	}
-	return http.ListenAndServeTLS(addr, cert, key, e)
+	return addr
 }

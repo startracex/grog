@@ -19,14 +19,6 @@ type RouteTree struct {
 	sorted   bool
 }
 
-func (rt *RouteTree) Set(s string) {
-	rt.Insert(s, SplitSlash(s), 0)
-}
-
-func (rt *RouteTree) Get(s string) *RouteTree {
-	return rt.Search(SplitSlash(s), 0)
-}
-
 func (rt *RouteTree) Insert(pattern string, parts []string, height int) {
 	defer rt.Sort()
 
@@ -39,7 +31,7 @@ func (rt *RouteTree) Insert(pattern string, parts []string, height int) {
 	if spec == nil {
 		spec = &RouteTree{
 			part:  part,
-			match: Dynamic(part).matchType,
+			match: dynamic(part).matchType,
 		}
 		rt.children = append(rt.children, spec)
 		rt.sorted = false
@@ -52,7 +44,7 @@ func (rt *RouteTree) Search(parts []string, height int) *RouteTree {
 		rt.Sort()
 	}
 
-	if len(parts) == height || Dynamic(rt.part).matchType == matchMulti {
+	if len(parts) == height || dynamic(rt.part).matchType == matchMulti {
 		if rt.Pattern == "" {
 			return nil
 		}
@@ -101,22 +93,6 @@ func (rt *RouteTree) Sort() {
 	rt.sorted = true
 }
 
-// func warnConflict(s, h string) {
-// 	indexOf := strings.Index(s, h)
-// 	lengthOf := len(h)
-// 	fmt.Println("  " + s)
-// 	fmt.Print("  ")
-// 	for indexOf > 0 {
-// 		fmt.Print(" ")
-// 		indexOf--
-// 	}
-// 	for lengthOf > 0 {
-// 		fmt.Print("^")
-// 		lengthOf--
-// 	}
-// 	fmt.Println()
-// }
-
 type dynamicInfo struct {
 	key       string
 	carry     int
@@ -124,11 +100,11 @@ type dynamicInfo struct {
 	matchType int
 }
 
-func Dynamic(key string) dynamicInfo {
+func dynamic(key string) dynamicInfo {
 	if len(key) > 0 {
 		if (strings.HasPrefix(key, "{") && strings.HasSuffix(key, "}")) || strings.HasPrefix(key, "[") && strings.HasSuffix(key, "]") {
 			key = key[1 : len(key)-1]
-			return Dynamic(key)
+			return dynamic(key)
 		}
 		if len(key) > 1 {
 			a := key[0]
@@ -152,16 +128,18 @@ func Dynamic(key string) dynamicInfo {
 }
 
 func ParseParams(path string, pattern string) map[string]string {
-	pathSpit := SplitSlash(path)
-	patternSpit := SplitSlash(pattern)
+	pathSplit := SplitSlash(path)
+	patternSplit := SplitSlash(pattern)
 	params := make(map[string]string)
-	for i := range patternSpit {
-		info := Dynamic(patternSpit[i])
+	for i := range patternSplit {
+		info := dynamic(patternSplit[i])
 		if info.key == "" {
 			continue
 		}
-		params[info.key[info.carry:]] = pathSpit[i]
-		if info.multi {
+		if !info.multi {
+			params[info.key[info.carry:]] = pathSplit[i]
+		} else {
+			params[info.key[info.carry:]] = strings.Join(pathSplit[i:], "/")
 			break
 		}
 	}

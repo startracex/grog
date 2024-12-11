@@ -1,8 +1,8 @@
 package goup
 
 import (
-	"net/http"
 	"os"
+	"path"
 	"strings"
 )
 
@@ -68,13 +68,13 @@ func (group *RouterGroup) TRACE(pattern string, handlers ...HandlerFunc) {
 // METHOD defines the method to add request
 func (group *RouterGroup) METHOD(method, pattern string, handlers ...HandlerFunc) {
 	method = strings.ToUpper(method)
-	for _, one := range AllMethods {
-		if method == one {
+	for _, m := range AllMethods {
+		if method == m {
 			group.AddRoute(method, pattern, handlers)
 			return
 		}
 	}
-	panic("Unsupported method")
+	panic("unsupported method")
 }
 
 // ALL defines the method to add all requests
@@ -89,17 +89,17 @@ func (group *RouterGroup) ANY(pattern string, handlers ...HandlerFunc) {
 	group.ALL(pattern, handlers...)
 }
 
-// NoRoute accept not found route subpath handler
+// NoRoute accept not handlers for not found route
 func (group *RouterGroup) NoRoute(handlers ...HandlerFunc) {
 	group.engine.noRouteHandler = handlers
 }
 
-// NoMethod accept not found method subpath handler
+// NoMethod accept not handlers for not found method
 func (group *RouterGroup) NoMethod(handlers ...HandlerFunc) {
 	group.engine.noMethodHandler = handlers
 }
 
-// Public handle directory, or file
+// Public handle file, or directory
 func (group *RouterGroup) Public(pattern string, path string) {
 	f, err := os.Open(path)
 	if err != nil {
@@ -122,27 +122,27 @@ func (group *RouterGroup) Static(pattern string, path string) {
 	group.Public(pattern, path)
 }
 
-// Directory handle directory, join root/pattern
+// Directory handle directory
 func (group *RouterGroup) Directory(pattern string, root string) {
 	key := "path"
 	handler := func(req *HttpRequest, res *HttpResponse) {
 		file := req.Params[key]
 		if len(file) == 0 {
-			res.Status(404)
+			res.Status(401)
 			return
 		}
-		http.ServeFile(res.Writer, req.OriginalRequest, root+"/"+file)
+		ServeFile(req, res, path.Join(root, file))
 	}
-	group.GET(pattern+"/*"+key, handler)
-	group.HEAD(pattern+"/*"+key, handler)
+	pattern = path.Join(pattern, "*"+key)
+	group.GET(pattern, handler)
+	group.HEAD(pattern, handler)
 }
 
 // File handle file
 func (group *RouterGroup) File(pattern string, filepath string) {
-	group.GET(pattern, func(req *HttpRequest, res *HttpResponse) {
+	handler := func(req *HttpRequest, res *HttpResponse) {
 		ServeFile(req, res, filepath)
-	})
-	group.HEAD(pattern, func(req *HttpRequest, res *HttpResponse) {
-		ServeFile(req, res, filepath)
-	})
+	}
+	group.GET(pattern, handler)
+	group.HEAD(pattern, handler)
 }
