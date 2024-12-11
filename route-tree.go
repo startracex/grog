@@ -102,9 +102,13 @@ type dynamicInfo struct {
 
 func dynamic(key string) dynamicInfo {
 	if len(key) > 0 {
-		if (strings.HasPrefix(key, "{") && strings.HasSuffix(key, "}")) || strings.HasPrefix(key, "[") && strings.HasSuffix(key, "]") {
+		if affix(key, "{", "}") {
 			key = key[1 : len(key)-1]
-			return dynamic(key)
+			if affix(key, "[", "]") {
+				return dynamic(key)
+			} else {
+				return dynamicInfo{key, 0, true, matchSingle}
+			}
 		}
 		if len(key) > 1 {
 			a := key[0]
@@ -125,6 +129,10 @@ func dynamic(key string) dynamicInfo {
 		multi:     false,
 		matchType: matchStrict,
 	}
+}
+
+func affix(key, prefix, suffix string) bool {
+	return strings.HasPrefix(key, prefix) && strings.HasSuffix(key, suffix)
 }
 
 func ParseParams(path string, pattern string) map[string]string {
