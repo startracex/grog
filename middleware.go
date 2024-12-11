@@ -34,11 +34,17 @@ func Recovery() HandlerFunc {
 	}
 }
 
+// Cors custom CORS config
 func Cors(c *cors.Cors) HandlerFunc {
 	return func(req Request, res Response) {
 		c.WriteHeader(res.Header())
 		req.Next(res)
 	}
+}
+
+// CorsAll allow all
+func CorsAll() HandlerFunc {
+	return Cors(cors.AllowAll())
 }
 
 // AutoOptions handle OPTIONS request, allow methods which have been registered
