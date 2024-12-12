@@ -93,13 +93,13 @@ func (rt *RouteTree) Sort() {
 	rt.sorted = true
 }
 
-type dynamicInfo struct {
+type dynamicType struct {
 	key       string
 	carry     int
 	matchType int
 }
 
-func dynamic(key string) dynamicInfo {
+func dynamic(key string) dynamicType {
 	if len(key) > 0 {
 		if affix(key, "{", "}") || affix(key, "[", "]") {
 			key = key[1 : len(key)-1]
@@ -112,17 +112,17 @@ func dynamic(key string) dynamicInfo {
 		if len(key) > 1 {
 			a := key[0]
 			if a == ':' {
-				return dynamicInfo{key, 1, matchSingle}
+				return dynamicType{key, 1, matchSingle}
 			}
 			if a == '*' {
-				return dynamicInfo{key, 1, matchMulti}
+				return dynamicType{key, 1, matchMulti}
 			}
 			if strings.HasPrefix(key, "...") {
-				return dynamicInfo{key, 3, matchMulti}
+				return dynamicType{key, 3, matchMulti}
 			}
 		}
 	}
-	return dynamicInfo{
+	return dynamicType{
 		key:       key,
 		carry:     0,
 		matchType: matchStrict,
