@@ -234,7 +234,7 @@ func (r *HttpRequest) Authorization() string {
 }
 
 // BasicAuthorization set header "Authorization" with Basic scheme
-func (r *HttpRequest) BasicAuthorization(parameters string) string {
+func (r *HttpRequest) BasicAuthorization() string {
 	a := r.Authorization()
 	if strings.HasPrefix(a, "Basic ") {
 		return a[6:]
@@ -243,7 +243,7 @@ func (r *HttpRequest) BasicAuthorization(parameters string) string {
 }
 
 // BearerAuthorization set header "Authorization" with Bearer scheme
-func (r *HttpRequest) BearerAuthorization(parameters string) string {
+func (r *HttpRequest) BearerAuthorization() string {
 	a := r.Authorization()
 	if strings.HasPrefix(a, "Bearer ") {
 		return a[7:]
