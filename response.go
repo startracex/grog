@@ -120,12 +120,12 @@ func (res HttpResponse) Authorization(scheme, parameters string) {
 
 // BasicAuthorization set header "Authorization" with Basic scheme
 func (res HttpResponse) BasicAuthorization(parameters string) {
-	res.SetHeader("Authorization", "Basic: "+parameters)
+	res.Authorization("Basic", parameters)
 }
 
 // BearerAuthorization set header "Authorization" with Bearer scheme
 func (res HttpResponse) BearerAuthorization(parameters string) {
-	res.SetHeader("Authorization", "Bearer: "+parameters)
+	res.Authorization("Bearer", parameters)
 }
 
 // ContentType set header "Content-Type"
