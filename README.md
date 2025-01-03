@@ -48,9 +48,9 @@ engine := goup.New()
 engine.Use(goup.DefaultMiddleware...)
 ```
 
-### Route
+### Router
 
-#### Route group
+#### Router group
 
 ```go
 engine := goup.Default()
