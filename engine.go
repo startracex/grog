@@ -9,7 +9,7 @@ import (
 	"sync"
 )
 
-var HOST = "127.0.0.1"
+var Host = "127.0.0.1"
 
 type Engine struct {
 	*RouterGroup
@@ -103,10 +103,10 @@ func (e *Engine) ListenAndServe(addr string) error {
 func (e *Engine) Run(addr string, filePath ...string) error {
 	addr = mustPort(addr)
 	if len(filePath) > 1 {
-		fmt.Println("Listen and serve TLS at https://" + HOST + addr)
+		fmt.Println("Listen and serve TLS at https://" + Host + addr)
 		return e.ListenAndServeTLS(addr, filePath[0], filePath[1])
 	}
-	fmt.Printf("Listen and serve at http://" + HOST + addr)
+	fmt.Println("Listen and serve at http://" + Host + addr)
 	return e.ListenAndServe(addr)
 }
 
