@@ -9,6 +9,7 @@ import (
 	"mime/multipart"
 	"net/http"
 	"net/url"
+	"strings"
 )
 
 type Request = *HttpRequest
@@ -132,9 +133,6 @@ func (r *HttpRequest) Body() io.ReadCloser {
 
 // StringBody get body as buffer.String()
 func (r *HttpRequest) StringBody() string {
-	//buf := r.Engine.Pool.Get().(*bytes.Buffer)
-	//defer r.Engine.Pool.Put(buf)
-	//buf.Reset()
 	buf, _, err := r.copyBody()
 	if err != nil {
 		return ""
@@ -144,10 +142,6 @@ func (r *HttpRequest) StringBody() string {
 
 // BytesBody get body as buffer.Bytes()
 func (r *HttpRequest) BytesBody() []byte {
-	//buf := r.Engine.Pool.Get().(*bytes.Buffer)
-	//r.Engine.Pool.Put(buf)
-	//buf.Reset()
-	//_, err := io.Copy(buf, r.Reader.Body)
 	buf, _, err := r.copyBody()
 	if err != nil {
 		return []byte{}
@@ -237,6 +231,24 @@ func (r *HttpRequest) Accept() string {
 
 func (r *HttpRequest) Authorization() string {
 	return r.GetHeader("Authorization")
+}
+
+// BasicAuthorization set header "Authorization" with Basic scheme
+func (r *HttpRequest) BasicAuthorization(parameters string) string {
+	a := r.Authorization()
+	if strings.HasPrefix(a, "Basic ") {
+		return a[6:]
+	}
+	return ""
+}
+
+// BearerAuthorization set header "Authorization" with Bearer scheme
+func (r *HttpRequest) BearerAuthorization(parameters string) string {
+	a := r.Authorization()
+	if strings.HasPrefix(a, "Bearer ") {
+		return a[7:]
+	}
+	return ""
 }
 
 func (r *HttpRequest) UserAgent() string {
