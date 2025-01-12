@@ -55,12 +55,13 @@ func AutoOptions() HandlerFunc {
 			methods := strings.Join(req.Engine.router.handlers.allMethods(req.Path), ", ")
 			if methods == "" {
 				res.WriteHeader(404)
-				return
+			} else {
+				res.SetHeader("Access-Control-Allow-Methods", methods)
+				res.SetHeader("Access-Control-Allow-Headers", "*")
+				res.SetHeader("Access-Control-Allow-Credentials", "true")
+				res.WriteHeader(204)
 			}
-			res.SetHeader("Access-Control-Allow-Methods", methods)
-			res.SetHeader("Access-Control-Allow-Headers", "*")
-			res.SetHeader("Access-Control-Allow-Credentials", "true")
-			res.WriteHeader(204)
+			req.Abort()
 			return
 		}
 		req.Next(res)
