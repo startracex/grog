@@ -42,11 +42,6 @@ func Cors(c *cors.Cors) HandlerFunc {
 	}
 }
 
-// CorsAll allow all
-func CorsAll() HandlerFunc {
-	return Cors(cors.AllowAll())
-}
-
 // AutoOptions handle OPTIONS request, allow methods which have been registered
 func AutoOptions() HandlerFunc {
 	return func(req Request, res Response) {
