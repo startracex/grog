@@ -94,7 +94,12 @@ func (r Request) Query() url.Values {
 
 // GetQuery get key from URLSearchParams
 func (r Request) GetQuery(key string) string {
-	return r.Reader.URL.Query().Get(key)
+	return r.Query().Get(key)
+}
+
+// HasQuery check if key exists in URLSearchParams
+func (r Request) HasQuery(key string) bool {
+	return r.Query().Has(key)
 }
 
 /* Form data */
