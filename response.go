@@ -23,7 +23,7 @@ func NewResponse(res http.ResponseWriter) HttpResponse {
 
 // With write header and call fn
 // It helps you fill in the header and execute the callback fn
-func (r HttpResponse) With(code int, fn func()) {
+func (r Response) With(code int, fn func()) {
 	r.WriteHeader(code)
 	fn()
 }
@@ -35,30 +35,30 @@ func (r Response) StatusText(code int) {
 }
 
 // Status is alias of WriteHeader
-func (r HttpResponse) Status(code int) HttpResponse {
+func (r Response) Status(code int) Response {
 	r.WriteHeader(code)
 	return r
 }
 
 // WriteHeader write status code
-func (r HttpResponse) WriteHeader(code int) {
+func (r Response) WriteHeader(code int) {
 	r.Writer.WriteHeader(code)
 }
 
 /* Write */
 
 // Write call Writer.Write
-func (r HttpResponse) Write(data []byte) (int, error) {
+func (r Response) Write(data []byte) (int, error) {
 	return r.Writer.Write(data)
 }
 
 // Byte is alias of Write
-func (r HttpResponse) Byte(data []byte) (int, error) {
+func (r Response) Byte(data []byte) (int, error) {
 	return r.Write(data)
 }
 
 // String write string
-func (r HttpResponse) String(format string, a ...any) (int, error) {
+func (r Response) String(format string, a ...any) (int, error) {
 	if len(a) == 0 {
 		return fmt.Fprint(r.Writer, format)
 	}
@@ -68,14 +68,14 @@ func (r HttpResponse) String(format string, a ...any) (int, error) {
 /* Data encode */
 
 // JSON send JSON encoded data
-func (r HttpResponse) JSON(data any) error {
+func (r Response) JSON(data any) error {
 	r.ContentType("application/json")
 	encoder := json.NewEncoder(r.Writer)
 	return encoder.Encode(data)
 }
 
 // HTML send HTML template
-func (r HttpResponse) HTML(name string, data any) error {
+func (r Response) HTML(name string, data any) error {
 	r.ContentType("text/html")
 	return r.Engine.Template.ExecuteTemplate(r.Writer, name, data)
 }
@@ -83,7 +83,7 @@ func (r HttpResponse) HTML(name string, data any) error {
 /* Cookies */
 
 // SetCookie set a cookie
-func (r HttpResponse) SetCookie(cookie *http.Cookie) HttpResponse {
+func (r Response) SetCookie(cookie *http.Cookie) Response {
 	http.SetCookie(r.Writer, cookie)
 	return r
 }
@@ -91,44 +91,44 @@ func (r HttpResponse) SetCookie(cookie *http.Cookie) HttpResponse {
 /* Headers */
 
 // Header get header
-func (r HttpResponse) Header() http.Header {
+func (r Response) Header() http.Header {
 	return r.Writer.Header()
 }
 
 // SetHeader set a header
-func (r HttpResponse) SetHeader(key, value string) HttpResponse {
+func (r Response) SetHeader(key, value string) Response {
 	r.Header().Set(key, value)
 	return r
 }
 
 // AddHeader add a header
-func (r HttpResponse) AddHeader(key, value string) HttpResponse {
+func (r Response) AddHeader(key, value string) Response {
 	r.Header().Add(key, value)
 	return r
 }
 
 // DeleteHeader delete a header
-func (r HttpResponse) DeleteHeader(key string) HttpResponse {
+func (r Response) DeleteHeader(key string) Response {
 	r.Header().Del(key)
 	return r
 }
 
 // Authorization set header "Authorization"
-func (r HttpResponse) Authorization(scheme, parameters string) {
+func (r Response) Authorization(scheme, parameters string) {
 	r.SetHeader("Authorization", scheme+" "+parameters)
 }
 
 // BasicAuthorization set header "Authorization" with Basic scheme
-func (r HttpResponse) BasicAuthorization(parameters string) {
+func (r Response) BasicAuthorization(parameters string) {
 	r.Authorization("Basic", parameters)
 }
 
 // BearerAuthorization set header "Authorization" with Bearer scheme
-func (r HttpResponse) BearerAuthorization(parameters string) {
+func (r Response) BearerAuthorization(parameters string) {
 	r.Authorization("Bearer", parameters)
 }
 
 // ContentType set header "Content-Type"
-func (r HttpResponse) ContentType(value string) {
+func (r Response) ContentType(value string) {
 	r.SetHeader("Content-Type", value)
 }
