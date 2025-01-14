@@ -2,6 +2,7 @@ package goup
 
 import (
 	"encoding/json"
+	"encoding/xml"
 	"fmt"
 	"net/http"
 )
@@ -71,6 +72,13 @@ func (r Response) String(format string, a ...any) (int, error) {
 func (r Response) JSON(data any) error {
 	r.ContentType("application/json")
 	encoder := json.NewEncoder(r.Writer)
+	return encoder.Encode(data)
+}
+
+// XML send XML encoded data
+func (r Response) XML(data any) error {
+	r.ContentType("application/xml")
+	encoder := xml.NewEncoder(r.Writer)
 	return encoder.Encode(data)
 }
 
