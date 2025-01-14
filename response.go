@@ -36,13 +36,13 @@ func (r Response) StatusText(code int) {
 
 // Status is alias of WriteHeader
 func (r HttpResponse) Status(code int) HttpResponse {
-	return r.WriteHeader(code)
+	r.WriteHeader(code)
+	return r
 }
 
 // WriteHeader write status code
-func (r HttpResponse) WriteHeader(code int) HttpResponse {
+func (r HttpResponse) WriteHeader(code int) {
 	r.Writer.WriteHeader(code)
-	return r
 }
 
 /* Write */
