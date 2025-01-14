@@ -78,6 +78,7 @@ func (r *Router) Handle(req *HttpRequest, res *HttpResponse) {
 	if node != nil {
 		pattern := node.Pattern
 		method := req.Method
+		req.Pattern = pattern
 		req.Params = ParseParams(path, pattern)
 		handlers, ok := r.handlers[pattern][method]
 		if ok {

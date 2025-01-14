@@ -20,6 +20,7 @@ type HttpRequest struct {
 	// original http request
 	Reader   *http.Request
 	Path     string
+	Pattern  string
 	Method   string
 	Params   map[string]string
 	Handlers []HandlerFunc
