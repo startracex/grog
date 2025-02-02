@@ -1,5 +1,7 @@
 package websocket
 
+import "slices"
+
 type WSGroup struct {
 	list []*WS
 }
@@ -38,7 +40,7 @@ func (wsg *WSGroup) Message() []byte {
 			data, err := ws.Message()
 			if err != nil {
 				ws.Close()
-				wsg.list = append(wsg.list[:index], wsg.list[index+1:]...)
+				wsg.list = slices.Delete(wsg.list, index, index+1)
 			}
 			dataCh <- data
 
@@ -52,7 +54,7 @@ func (wsg *WSGroup) Clean() int {
 	initialLen := wsg.Len()
 	for i := initialLen - 1; i >= 0; i-- {
 		if wsg.list[i].Closed {
-			wsg.list = append(wsg.list[:i], wsg.list[i+1:]...)
+			wsg.list = slices.Delete(wsg.list, i, i+1)
 		}
 	}
 	return initialLen - wsg.Len()
