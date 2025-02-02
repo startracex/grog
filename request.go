@@ -23,6 +23,11 @@ type HttpRequest struct {
 	Pattern  string
 	Method   string
 	Params   map[string]string
+	Body     io.ReadCloser
+	Header   http.Header
+	Query    url.Values
+	Cookies  []*http.Cookie
+	Context  context.Context
 	Handlers []HandlerFunc
 	index    int
 	Engine   *Engine
@@ -30,10 +35,15 @@ type HttpRequest struct {
 
 func NewRequest(req *http.Request) HttpRequest {
 	return HttpRequest{
-		Reader: req,
-		Path:   req.URL.Path,
-		Method: req.Method,
-		index:  -1,
+		Reader:  req,
+		Path:    req.URL.Path,
+		Method:  req.Method,
+		Body:    req.Body,
+		Query:   req.URL.Query(),
+		Header:  req.Header,
+		Cookies: req.Cookies(),
+		Context: req.Context(),
+		index:   -1,
 	}
 }
 
@@ -87,19 +97,14 @@ func (r Request) UseRouter() (string, map[string]string) {
 	return r.Path, r.Params
 }
 
-// Query get URLSearchParams
-func (r Request) Query() url.Values {
-	return r.Reader.URL.Query()
-}
-
 // GetQuery get key from URLSearchParams
 func (r Request) GetQuery(key string) string {
-	return r.Query().Get(key)
+	return r.Query.Get(key)
 }
 
 // HasQuery check if key exists in URLSearchParams
 func (r Request) HasQuery(key string) bool {
-	return r.Query().Has(key)
+	return r.Query.Has(key)
 }
 
 /* Form data */
@@ -132,11 +137,6 @@ func (r Request) XML(v any) error {
 
 /* Read */
 
-// Body get *http.Request.Body
-func (r Request) Body() io.ReadCloser {
-	return r.Reader.Body
-}
-
 // StringBody get body as buffer.String()
 func (r Request) StringBody() string {
 	buf, _, err := r.copyBody()
@@ -159,16 +159,11 @@ func (r Request) copyBody() (*bytes.Buffer, int64, error) {
 	buf := r.Engine.Pool.Get().(*bytes.Buffer)
 	defer r.Engine.Pool.Put(buf)
 	buf.Reset()
-	l, err := io.Copy(buf, r.Reader.Body)
+	l, err := io.Copy(buf, r.Body)
 	return buf, l, err
 }
 
 /* Context */
-
-// Context is alias of *http.Request.Context
-func (r Request) Context() context.Context {
-	return r.Reader.Context()
-}
 
 // WithContext is alias of *http.Request.WithContext
 func (r Request) WithContext(ctx context.Context) {
@@ -177,7 +172,7 @@ func (r Request) WithContext(ctx context.Context) {
 
 // SetValue Set custom parameters to the context
 func (r Request) SetValue(key any, value any) {
-	r.WithContext(context.WithValue(r.Reader.Context(), key, value))
+	r.WithContext(context.WithValue(r.Context, key, value))
 }
 
 // Set is alias of SetValue
@@ -187,7 +182,7 @@ func (r Request) Set(key string, value any) {
 
 // GetValue Get custom parameters to the context
 func (r Request) GetValue(key string) any {
-	return r.Context().Value(key)
+	return r.Context.Value(key)
 }
 
 // Get is alias of GetValue
@@ -196,11 +191,6 @@ func (r Request) Get(key string) any {
 }
 
 /* Cookies */
-
-// Cookies get all cookies
-func (r Request) Cookies() []*http.Cookie {
-	return r.Reader.Cookies()
-}
 
 // GetCookie get key from cookie
 func (r Request) GetCookie(key string) string {
@@ -213,14 +203,9 @@ func (r Request) GetCookie(key string) string {
 
 /* Headers */
 
-// Header get header
-func (r Request) Header() http.Header {
-	return r.Reader.Header
-}
-
 // GetHeader get the key from header
 func (r Request) GetHeader(key string) string {
-	return r.Header().Get(key)
+	return r.Header.Get(key)
 }
 
 func (r Request) ContentLength() int64 {
