@@ -72,7 +72,7 @@ func (r *Router) register(method string, pattern string, handlers []HandlerFunc)
 }
 
 // Handle request or not found
-func (r *Router) Handle(req *HttpRequest, res *HttpResponse) {
+func (r *Router) Handle(req *InnerRequest, res *InnerResponse) {
 	path := req.Path
 	node := r.root.Search(SplitSlash(path), 0)
 	if node != nil {
@@ -93,7 +93,7 @@ func (r *Router) Handle(req *HttpRequest, res *HttpResponse) {
 	req.Next(res)
 }
 
-func (r *Router) HandlePrefix(req *HttpRequest, res *HttpResponse, prefix string) {
+func (r *Router) HandlePrefix(req *InnerRequest, res *InnerResponse, prefix string) {
 	key := req.Path
 	method := req.Method
 	for regex, maps := range r.handlers {

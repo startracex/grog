@@ -12,11 +12,11 @@ import (
 	"strings"
 )
 
-type Request = *HttpRequest
+type Request = *InnerRequest
 
 type HandlerFunc func(Request, Response)
 
-type HttpRequest struct {
+type InnerRequest struct {
 	// original http request
 	Reader   *http.Request
 	Path     string
@@ -33,8 +33,8 @@ type HttpRequest struct {
 	Engine   *Engine
 }
 
-func NewRequest(req *http.Request) HttpRequest {
-	return HttpRequest{
+func NewRequest(req *http.Request) InnerRequest {
+	return InnerRequest{
 		Reader:  req,
 		Path:    req.URL.Path,
 		Method:  req.Method,
@@ -48,7 +48,7 @@ func NewRequest(req *http.Request) HttpRequest {
 }
 
 // Next call the next handler
-func (r Request) Next(w *HttpResponse) {
+func (r Request) Next(w *InnerResponse) {
 	r.index++
 	for ; r.index < len(r.Handlers); r.index++ {
 		r.Handlers[r.index](r, w)

@@ -125,7 +125,7 @@ func (group *RouterGroup) Static(pattern string, path string) {
 // Directory handle directory
 func (group *RouterGroup) Directory(pattern string, root string) {
 	key := "path"
-	handler := func(req *HttpRequest, res *HttpResponse) {
+	handler := func(req *InnerRequest, res *InnerResponse) {
 		file := req.Params[key]
 		if len(file) == 0 {
 			res.Status(401)
@@ -140,7 +140,7 @@ func (group *RouterGroup) Directory(pattern string, root string) {
 
 // File handle file
 func (group *RouterGroup) File(pattern string, filepath string) {
-	handler := func(req *HttpRequest, res *HttpResponse) {
+	handler := func(req *InnerRequest, res *InnerResponse) {
 		ServeFile(req, res, filepath)
 	}
 	group.GET(pattern, handler)

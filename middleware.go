@@ -13,7 +13,7 @@ var DefaultMiddleware = []HandlerFunc{Logger(), Recovery(), AutoOptions()}
 
 // Logger record the request path, method
 func Logger() HandlerFunc {
-	return func(req *HttpRequest, res *HttpResponse) {
+	return func(req *InnerRequest, res *InnerResponse) {
 		t := time.Now()
 		req.Next(res)
 		log.Printf("[%s] %s <%v>", req.Method, req.Path, time.Since(t))
@@ -22,7 +22,7 @@ func Logger() HandlerFunc {
 
 // Recovery error returns 500
 func Recovery() HandlerFunc {
-	return func(req *HttpRequest, res *HttpResponse) {
+	return func(req *InnerRequest, res *InnerResponse) {
 		defer func() {
 			if err := recover(); err != nil {
 				message := fmt.Sprintf("%s", err)

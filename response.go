@@ -7,15 +7,15 @@ import (
 	"net/http"
 )
 
-type Response = *HttpResponse
+type Response = *InnerResponse
 
-type HttpResponse struct {
+type InnerResponse struct {
 	Writer http.ResponseWriter
 	Engine *Engine
 }
 
-func NewResponse(res http.ResponseWriter) HttpResponse {
-	return HttpResponse{
+func NewResponse(res http.ResponseWriter) InnerResponse {
+	return InnerResponse{
 		Writer: res,
 	}
 }
