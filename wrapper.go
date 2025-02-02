@@ -5,8 +5,6 @@ import (
 	"net/http"
 )
 
-type KV = map[string]any
-
 // Upgrade wrap websocket.Upgrade
 func Upgrade(req Request, res Response) *websocket.WS {
 	return websocket.Upgrade(res.Writer, req.Reader)
