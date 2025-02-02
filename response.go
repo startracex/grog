@@ -5,6 +5,7 @@ import (
 	"encoding/xml"
 	"fmt"
 	"net/http"
+	"strings"
 )
 
 type Response = *InnerResponse
@@ -122,8 +123,8 @@ func (r Response) DeleteHeader(key string) Response {
 }
 
 // Authorization set header "Authorization"
-func (r Response) Authorization(scheme, parameters string) {
-	r.SetHeader("Authorization", scheme+" "+parameters)
+func (r Response) Authorization(parameters ...string) {
+	r.SetHeader("Authorization", strings.Join(parameters, " "))
 }
 
 // BasicAuthorization set header "Authorization" with Basic scheme
