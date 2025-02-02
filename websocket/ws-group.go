@@ -38,7 +38,7 @@ func (wsg *WSGroup) Message() []byte {
 			data, err := ws.Message()
 			if err != nil {
 				ws.Close()
-				wsg.Splice(index, 1)
+				wsg.list = append(wsg.list[:index], wsg.list[index+1:]...)
 			}
 			dataCh <- data
 
@@ -55,13 +55,6 @@ func (wsg *WSGroup) Clean() int {
 			wsg.list = append(wsg.list[:i], wsg.list[i+1:]...)
 		}
 	}
-	return initialLen - wsg.Len()
-}
-
-// Splice remove connection from index to index+count, returns removed length
-func (wsg *WSGroup) Splice(index, count int) int {
-	initialLen := wsg.Len()
-	wsg.list = append(wsg.list[:index], wsg.list[index+count:]...)
 	return initialLen - wsg.Len()
 }
 
