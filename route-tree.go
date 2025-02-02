@@ -95,7 +95,6 @@ func (rt *RouteTree) Sort() {
 
 type dynamicType struct {
 	key       string
-	carry     int
 	matchType int
 }
 
@@ -112,19 +111,18 @@ func dynamic(key string) dynamicType {
 		if len(key) > 1 {
 			a := key[0]
 			if a == ':' {
-				return dynamicType{key, 1, matchSingle}
+				return dynamicType{key[1:], matchSingle}
 			}
 			if a == '*' {
-				return dynamicType{key, 1, matchMulti}
+				return dynamicType{key[1:], matchMulti}
 			}
 			if strings.HasPrefix(key, "...") {
-				return dynamicType{key, 3, matchMulti}
+				return dynamicType{key[3:], matchMulti}
 			}
 		}
 	}
 	return dynamicType{
 		key:       key,
-		carry:     0,
 		matchType: matchStrict,
 	}
 }
@@ -140,9 +138,9 @@ func ParseParams(path string, pattern string) map[string]string {
 	for i := range patternSplit {
 		info := dynamic(patternSplit[i])
 		if info.matchType == matchSingle {
-			params[info.key[info.carry:]] = pathSplit[i]
+			params[info.key] = pathSplit[i]
 		} else if info.matchType == matchMulti {
-			params[info.key[info.carry:]] = strings.Join(pathSplit[i:], "/")
+			params[info.key] = strings.Join(pathSplit[i:], "/")
 			break
 		}
 	}
