@@ -27,7 +27,6 @@ type InnerRequest struct {
 	Header   http.Header
 	Query    url.Values
 	Cookies  []*http.Cookie
-	Context  context.Context
 	Handlers []HandlerFunc
 	index    int
 	Engine   *Engine
@@ -42,7 +41,6 @@ func NewRequest(req *http.Request) InnerRequest {
 		Query:   req.URL.Query(),
 		Header:  req.Header,
 		Cookies: req.Cookies(),
-		Context: req.Context(),
 		index:   -1,
 	}
 }
@@ -172,7 +170,7 @@ func (r Request) WithContext(ctx context.Context) {
 
 // SetValue Set custom parameters to the context
 func (r Request) SetValue(key any, value any) {
-	r.WithContext(context.WithValue(r.Context, key, value))
+	r.WithContext(context.WithValue(r.Reader.Context(), key, value))
 }
 
 // Set is alias of SetValue
@@ -182,7 +180,7 @@ func (r Request) Set(key string, value any) {
 
 // GetValue Get custom parameters to the context
 func (r Request) GetValue(key string) any {
-	return r.Context.Value(key)
+	return r.Reader.Context().Value(key)
 }
 
 // Get is alias of GetValue
