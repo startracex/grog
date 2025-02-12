@@ -1,9 +1,5 @@
 package goup
 
-import (
-	"regexp"
-)
-
 // HandlersNest pattern -> method -> []HandlerFunc
 type HandlersNest map[string]map[string][]HandlerFunc
 
@@ -52,7 +48,6 @@ func (h HandlersNest) allMethods(pattern string) []string {
 type Router struct {
 	root     *RouteTree
 	handlers HandlersNest
-	re       bool
 }
 
 // NewRouter create empty Router
@@ -65,10 +60,7 @@ func NewRouter() *Router {
 
 // register add a pattern -> method -> handlers
 func (r *Router) register(method string, pattern string, handlers []HandlerFunc) {
-	if !r.re {
-		r.root.Insert(pattern, SplitSlash(pattern), 0)
-	}
-	r.handlers.append(pattern, method, handlers)
+	r.root.Insert(pattern, SplitSlash(pattern), 0)
 }
 
 // Handle request or not found
@@ -90,27 +82,5 @@ func (r *Router) Handle(req *InnerRequest, res *InnerResponse) {
 		req.appendHandlers(req.Engine.noRouteHandler)
 	}
 
-	req.Next(res)
-}
-
-func (r *Router) HandlePrefix(req *InnerRequest, res *InnerResponse, prefix string) {
-	key := req.Path
-	method := req.Method
-	for regex, maps := range r.handlers {
-		if len(regex) < len(prefix) || len(regex) < len(key) {
-			continue
-		}
-		if match, _ := regexp.MatchString(regex[len(prefix):], key[len(prefix):]); match {
-			handlers, ok := maps[method]
-			if ok {
-				req.appendHandlers(handlers)
-			} else {
-				req.appendHandlers(req.Engine.noMethodHandler)
-			}
-			req.Next(res)
-			return
-		}
-	}
-	req.appendHandlers(req.Engine.noRouteHandler)
 	req.Next(res)
 }
