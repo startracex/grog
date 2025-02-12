@@ -29,11 +29,11 @@ func (e *Engine) ServeHTTP(res http.ResponseWriter, req *http.Request) {
 	for _, group := range e.groups {
 		if strings.HasPrefix(req.URL.Path, group.prefix+"/") {
 			newRequest.appendHandlers(group.middlewares)
-
 		}
 	}
 
 	newResponse := NewResponse(res)
+	newResponse.Engine = e
 	e.router.Handle(&newRequest, &newResponse)
 }
 

@@ -61,6 +61,7 @@ func NewRouter() *Router {
 // register add a pattern -> method -> handlers
 func (r *Router) register(method string, pattern string, handlers []HandlerFunc) {
 	r.root.Insert(pattern, SplitSlash(pattern), 0)
+	r.handlers.append(pattern, method, handlers)
 }
 
 // Handle request or not found
