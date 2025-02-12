@@ -47,7 +47,7 @@ func AutoOptions() HandlerFunc {
 	return func(req Request, res Response) {
 		res.SetHeader("Access-Control-Allow-Origin", req.Origin())
 		if req.Method == OPTIONS {
-			methods := strings.Join(req.Engine.router.handlers.allMethods(req.Path), ", ")
+			methods := strings.Join(req.Engine.router.handlers.allMethods(req.Pattern), ", ")
 			if methods == "" {
 				res.WriteHeader(404)
 			} else {
