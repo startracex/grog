@@ -29,7 +29,7 @@ func AllowAll() *Cors {
 	}
 }
 
-// MatchOrigin return if AllowOrigin match a header "Origin"
+// MatchOrigin return if AllowOrigin match origin
 func (c *Cors) MatchOrigin(origin string) bool {
 	if c.AllowOrigin == nil {
 		return false
