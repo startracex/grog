@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"encoding/binary"
 	"errors"
+	"io"
 	"net"
 	"time"
 )
@@ -26,7 +27,6 @@ var (
 	ErrOpcode3_7 = errors.New("OPCODE 3-7")
 	ErrFinNot1   = errors.New("FIN NOT 1")
 	ErrRsvNot0   = errors.New("RSV NOT 0")
-	ErrClosed    = errors.New("CLOSED")
 )
 
 // ReadFrame read bytes from reader
@@ -172,14 +172,30 @@ func Ping(conn net.Conn, bt []byte, d time.Duration) error {
 }
 
 // Pone sends pong to connection
-func Pone(conn net.Conn) error {
-	data, err := ReadFrame(bufio.NewReader(conn))
-	if !errors.Is(err, ErrOpcode9) {
-		return errors.New("NOT PING")
-	}
-	err = WriteFrame(conn, data, PONG)
+func Pone(conn net.Conn, bt []byte) error {
+	err := WriteFrame(conn, bt, PONG)
 	if err != nil {
 		return err
 	}
 	return nil
+}
+
+func Close(conn net.Conn, bt []byte) error {
+	err := WriteFrame(conn, bt, CLOSE)
+	if err != nil {
+		return err
+	}
+	return conn.Close()
+}
+
+func IsPing(err error) bool {
+	return errors.Is(err, ErrOpcode9)
+}
+
+func IsPong(err error) bool {
+	return errors.Is(err, ErrOpcode10)
+}
+
+func IsClose(err error) bool {
+	return errors.Is(err, ErrOpcode8) || errors.Is(err, io.EOF)
 }

@@ -11,6 +11,8 @@ import (
 	"time"
 )
 
+var ErrClosed = errors.New("CLOSED")
+
 func GetKey(h http.Header) string {
 	return h.Get("Sec-WebSocket-Key")
 }
@@ -77,18 +79,19 @@ func (ws *WS) Send(data []byte, datatype int) error {
 // Message wait for a message
 func (ws *WS) Message() ([]byte, error) {
 	data, err := ReadFrame(ws.Reader)
-	if errors.Is(err, ErrOpcode8) || errors.Is(err, io.EOF) { // OPCODE 8 close / EOF close
+	if IsClose(err) { // OPCODE 8 close / EOF close
 		ws.Closed = true
-		return nil, ErrClosed
-	} else if errors.Is(err, ErrOpcode9) { // OPCODE 9 ping
+		return nil, err
+	}
+	if IsPing(err) { // OPCODE 9 ping
 		err := WriteFrame(ws.Conn, data, PONG)
 		if err != nil {
 			return nil, err
 		}
 		return data, ErrOpcode9
-	} else { // OPCODE Other
-		return data, nil
 	}
+
+	return data, nil
 }
 
 // Close connection
@@ -108,6 +111,6 @@ func (ws *WS) Ping(bt []byte, d time.Duration) error {
 	return Ping(ws.Conn, bt, d)
 }
 
-func (ws *WS) Pone() error {
-	return Pone(ws.Conn)
+func (ws *WS) Pone(bt []byte, ) error {
+	return Pone(ws.Conn, bt)
 }
