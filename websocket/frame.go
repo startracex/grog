@@ -51,11 +51,11 @@ func ReadTypeFrame(reader *bufio.Reader) (data []byte, code int, err error) {
 	rsv2 := firstByte&0x20 == 0x20
 	rsv3 := firstByte&0x10 == 0x10
 	opcode := firstByte & 0x0F
+	code = int(opcode)
 	if !fin {
 		err = ErrFinNot1
 		return
 	}
-	code = int(opcode)
 	switch opcode {
 	case 0:
 		err = ErrOpcode0
