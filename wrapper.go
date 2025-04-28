@@ -1,7 +1,7 @@
-package goup
+package grog
 
 import (
-	"github.com/startracex/goup/websocket"
+	"github.com/startracex/grog/websocket"
 	"net/http"
 )
 

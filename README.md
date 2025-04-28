@@ -1,26 +1,26 @@
-# goup
+# grog
 
-goup is a zero dependency web framework.
+grog is a zero dependency web framework.
 
 It provides APIs similar to `gin` and `express`.
 
 ## Import
 
 ```sh
-go get -u github.com/startracex/goup
+go get -u github.com/startracex/grog
 ```
 
 ```go
 import (
-    "github.com/startracex/goup"
+    "github.com/startracex/grog"
 )
 ```
 
 ### Start a server
 
 ```go
-engine := goup.New()
-engine.GET("/", func (req goup.Request, res goup.Response) {
+engine := grog.New()
+engine.GET("/", func (req grog.Request, res grog.Response) {
     res.String("Hello, world!")
 })
 engine.Run("9000")
@@ -33,19 +33,19 @@ Listen and serve at http://127.0.0.1:9000
 ### Middleware
 
 ```go
-engine := goup.New()
+engine := grog.New()
 engine.Use(/* ...middlewares */)
 ```
 
 #### Defaults middlewares
 
 ```go
-engine := goup.Default()
+engine := grog.Default()
 ```
 
 ```go
-engine := goup.New()
-engine.Use(goup.DefaultMiddleware...)
+engine := grog.New()
+engine.Use(grog.DefaultMiddleware...)
 ```
 
 ### Router
@@ -53,7 +53,7 @@ engine.Use(goup.DefaultMiddleware...)
 #### Router group
 
 ```go
-engine := goup.Default()
+engine := grog.Default()
 apiGroup := engine.Group("/api")
 apiGroup.GET("/get-something", func (req Request, res Response) {
 
@@ -63,7 +63,7 @@ apiGroup.GET("/get-something", func (req Request, res Response) {
 ### Serve file
 
 ```go
-engine := goup.New()
+engine := grog.New()
 engine.Public("/favicon.ico", "./public/favicon.ico")
 engine.Public("/public", "./public")
 ```
@@ -72,8 +72,8 @@ engine.Public("/public", "./public")
 
 ```go
 wsg := websocket.NewWSGroup()
-engine.GET("/ws", func(request goup.Request, response goup.Response) {
-    ws := goup.Upgrade(request, response)
+engine.GET("/ws", func(request grog.Request, response grog.Response) {
+    ws := grog.Upgrade(request, response)
     wsg.Add(ws)
     for {
         message := wsg.Message()

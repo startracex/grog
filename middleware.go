@@ -1,8 +1,8 @@
-package goup
+package grog
 
 import (
 	"fmt"
-	"github.com/startracex/goup/cors"
+	"github.com/startracex/grog/cors"
 	"log"
 	"runtime"
 	"strings"

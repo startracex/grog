@@ -1,4 +1,4 @@
-package goup
+package grog
 
 type RouterGroup struct {
 	prefix      string

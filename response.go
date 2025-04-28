@@ -1,4 +1,4 @@
-package goup
+package grog
 
 import (
 	"encoding/json"

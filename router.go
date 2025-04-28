@@ -1,4 +1,4 @@
-package goup
+package grog
 
 // HandlersNest pattern -> method -> []HandlerFunc
 type HandlersNest map[string]map[string][]HandlerFunc
