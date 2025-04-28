@@ -3,8 +3,10 @@ package grog
 import (
 	"encoding/json"
 	"encoding/xml"
+	"errors"
 	"fmt"
 	"net/http"
+	"os"
 	"strings"
 )
 
@@ -28,12 +30,6 @@ func NewResponse(res http.ResponseWriter) InnerResponse {
 func (r Response) With(code int, fn func()) {
 	r.WriteHeader(code)
 	fn()
-}
-
-// StatusText send code http.StatusText(code)
-func (r Response) StatusText(code int) {
-	r.WriteHeader(code)
-	r.String("%d %s", code, http.StatusText(code)+".")
 }
 
 // Status is alias of WriteHeader
@@ -140,4 +136,23 @@ func (r Response) BearerAuthorization(parameters string) {
 // ContentType set header "Content-Type"
 func (r Response) ContentType(value string) {
 	r.SetHeader("Content-Type", value)
+}
+
+// Error send error
+func (r Response) Error(err error) {
+	if err == nil {
+		return
+	}
+	var responseError ErrorBuilder
+	if errors.As(err, &responseError) {
+		r.Engine.WriteError(r, responseError)
+		return
+	}
+	code := http.StatusInternalServerError
+	if errors.Is(err, os.ErrNotExist) {
+		code = 404
+	} else if errors.Is(err, os.ErrPermission) {
+		code = 403
+	}
+	http.Error(r, err.Error(), code)
 }

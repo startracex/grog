@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/startracex/grog/cors"
 	"log"
+	"net/http"
 	"runtime"
 	"strings"
 	"time"
@@ -20,14 +21,17 @@ func Logger() HandlerFunc {
 	}
 }
 
+var ErrRecovery = fmt.Errorf(http.StatusText(500))
+
 // Recovery error returns 500
 func Recovery() HandlerFunc {
 	return func(req *InnerRequest, res *InnerResponse) {
 		defer func() {
-			if err := recover(); err != nil {
+			err := recover()
+			if err != nil {
 				message := fmt.Sprintf("%s", err)
 				log.Printf("%s\n\n", trace(message))
-				res.StatusText(500)
+				res.Error(ErrRecovery)
 			}
 		}()
 		req.Next(res)

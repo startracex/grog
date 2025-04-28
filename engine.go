@@ -20,6 +20,7 @@ type Engine struct {
 	FuncMap         template.FuncMap
 	noRouteHandler  []HandlerFunc
 	noMethodHandler []HandlerFunc
+	WriteError      func(Response, ErrorBuilder)
 }
 
 // ServeHTTP for http.ListenAndServe
@@ -46,10 +47,10 @@ func New() *Engine {
 		return bytes.NewBuffer(make([]byte, 4096))
 	}
 	engine.NoRoute(func(request Request, response Response) {
-		response.StatusText(404)
+		http.Error(response, http.StatusText(404), 404)
 	})
 	engine.NoMethod(func(request Request, response Response) {
-		response.StatusText(405)
+		http.Error(response, http.StatusText(405), 405)
 	})
 	return engine
 }

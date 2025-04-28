@@ -1,7 +1,6 @@
 package grog
 
 import (
-	"errors"
 	"net/http"
 	"os"
 	"path"
@@ -13,13 +12,7 @@ func ServeFile(req Request, res Response, filePath string) {
 	filePath = SecurePath(filePath)
 	f, err := os.Open(filePath)
 	if err != nil {
-		if errors.Is(err, os.ErrNotExist) {
-			res.StatusText(404)
-		} else if errors.Is(err, os.ErrPermission) {
-			res.StatusText(403)
-		} else {
-			res.StatusText(500)
-		}
+		res.Error(err)
 		return
 	}
 	defer f.Close()
@@ -30,7 +23,7 @@ func ServeFile(req Request, res Response, filePath string) {
 func ServeContent(req Request, res Response, f *os.File) {
 	s, err := f.Stat()
 	if err != nil {
-		res.StatusText(500)
+		res.Error(err)
 		return
 	}
 	http.ServeContent(res.Writer, req.Reader, f.Name(), s.ModTime(), f)
