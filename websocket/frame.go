@@ -18,22 +18,33 @@ const (
 )
 
 var (
-	ErrOpcode0   = errors.New("OPCODE 0")
-	ErrOpcode1   = errors.New("OPCODE 1")
-	ErrOpcode2   = errors.New("OPCODE 2")
-	ErrOpcode8   = errors.New("OPCODE 8")
-	ErrOpcode9   = errors.New("OPCODE 9")
-	ErrOpcode10  = errors.New("OPCODE 10")
-	ErrOpcode3_7 = errors.New("OPCODE 3-7")
-	ErrFinNot1   = errors.New("FIN NOT 1")
-	ErrRsvNot0   = errors.New("RSV NOT 0")
+	ErrOpcode0  = errors.New("OPCODE 0")
+	ErrOpcode1  = errors.New("OPCODE 1")
+	ErrOpcode2  = errors.New("OPCODE 2")
+	ErrOpcode37 = errors.New("OPCODE 3-7")
+	ErrOpcode8  = errors.New("OPCODE 8")
+	ErrOpcode9  = errors.New("OPCODE 9")
+	ErrOpcodeA  = errors.New("OPCODE 10")
+	ErrOpcodeBF = errors.New("OPCODE 11-15")
+	ErrFinNot1  = errors.New("FIN NOT 1")
+	ErrRsvNot0  = errors.New("RSV NOT 0")
 )
 
-// ReadFrame read bytes from reader
+// ReadFrame read bytes from reader, if datatype is 1 or 2, error is nil.
 func ReadFrame(reader *bufio.Reader) ([]byte, error) {
+	data, code, err := ReadTypeFrame(reader)
+	if code == 1 || code == 2 {
+		return data, nil
+	}
+	return nil, err
+}
+
+// ReadTypeFrame read bytes from reader, return data, datatype, error.
+func ReadTypeFrame(reader *bufio.Reader) (data []byte, code int, err error) {
+	code = -1
 	firstByte, err := reader.ReadByte()
 	if err != nil {
-		return nil, err
+		return
 	}
 	fin := firstByte&0x80 == 0x80
 	rsv1 := firstByte&0x40 == 0x40
@@ -41,27 +52,42 @@ func ReadFrame(reader *bufio.Reader) ([]byte, error) {
 	rsv3 := firstByte&0x10 == 0x10
 	opcode := firstByte & 0x0F
 	if !fin {
-		return nil, ErrFinNot1
+		err = ErrFinNot1
+		return
 	}
+	code = int(opcode)
 	switch opcode {
 	case 0:
-		return nil, ErrOpcode0
+		err = ErrOpcode0
+		return
+	case 1:
+		err = ErrOpcode1
+	case 2:
+		err = ErrOpcode2
 	case 3, 4, 5, 6, 7:
-		return nil, ErrOpcode3_7
+		err = ErrOpcode37
+		return
 	case 8:
-		return nil, ErrOpcode8
+		err = ErrOpcode8
+		return
 	case 9:
-		return nil, ErrOpcode9
+		err = ErrOpcode9
+		return
 	case 10:
-		return nil, ErrOpcode10
+		err = ErrOpcodeA
+		return
+	case 11, 12, 13, 14, 15:
+		err = ErrOpcodeBF
+		return
 	}
 	if rsv1 || rsv2 || rsv3 {
-		return nil, ErrRsvNot0
+		err = ErrRsvNot0
+		return
 	}
 
 	secondByte, err := reader.ReadByte()
 	if err != nil {
-		return nil, err
+		return
 	}
 	masked := secondByte&0x80 == 0x80
 	payloadLength := int(secondByte & 0x7F)
@@ -69,32 +95,32 @@ func ReadFrame(reader *bufio.Reader) ([]byte, error) {
 	if payloadLength == 126 {
 
 		lengthBytes := make([]byte, 2)
-		_, err := reader.Read(lengthBytes)
+		_, err = reader.Read(lengthBytes)
 		if err != nil {
-			return nil, err
+			return
 		}
 		payloadLength = int(binary.BigEndian.Uint16(lengthBytes))
 	} else if payloadLength == 127 {
 
 		lengthBytes := make([]byte, 8)
-		_, err := reader.Read(lengthBytes)
+		_, err = reader.Read(lengthBytes)
 		if err != nil {
-			return nil, err
+			return
 		}
 		payloadLength = int(binary.BigEndian.Uint64(lengthBytes))
 	}
 
 	mask := make([]byte, 4)
 	if masked {
-		_, err := reader.Read(mask)
+		_, err = reader.Read(mask)
 		if err != nil {
-			return nil, err
+			return
 		}
 	}
 	payloadData := make([]byte, payloadLength)
 	_, err = reader.Read(payloadData)
 	if err != nil {
-		return nil, err
+		return
 	}
 
 	if masked {
@@ -103,13 +129,8 @@ func ReadFrame(reader *bufio.Reader) ([]byte, error) {
 		}
 	}
 
-	switch opcode {
-	case 1:
-		return payloadData, ErrOpcode1
-	case 2:
-		return payloadData, ErrOpcode2
-	}
-	return payloadData, nil
+	data = payloadData
+	return
 }
 
 // WriteFrame write data to conn with datatype
@@ -162,7 +183,7 @@ func Ping(conn net.Conn, bt []byte, d time.Duration) error {
 
 	select {
 	case err := <-er:
-		if errors.Is(err, ErrOpcode10) {
+		if errors.Is(err, ErrOpcodeA) {
 			return nil
 		}
 		return errors.New("NOT PONG")
@@ -193,7 +214,7 @@ func IsPing(err error) bool {
 }
 
 func IsPong(err error) bool {
-	return errors.Is(err, ErrOpcode10)
+	return errors.Is(err, ErrOpcodeA)
 }
 
 func IsClose(err error) bool {
