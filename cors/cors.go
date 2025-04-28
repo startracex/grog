@@ -6,8 +6,8 @@ import (
 	"strings"
 )
 
-// Cors config
-type Cors struct {
+// Config config
+type Config struct {
 	Allow            []string
 	AllowOrigin      []string
 	AllowMethod      []string
@@ -18,8 +18,8 @@ type Cors struct {
 }
 
 // AllowAll allow all
-func AllowAll() *Cors {
-	return &Cors{
+func AllowAll() *Config {
+	return &Config{
 		AllowOrigin:      []string{"*"},
 		AllowMethod:      []string{"*"},
 		AllowHeaders:     []string{"*"},
@@ -30,7 +30,7 @@ func AllowAll() *Cors {
 }
 
 // MatchOrigin return if AllowOrigin match origin
-func (c *Cors) MatchOrigin(origin string) bool {
+func (c *Config) MatchOrigin(origin string) bool {
 	if c.AllowOrigin == nil {
 		return false
 	}
@@ -43,7 +43,7 @@ func (c *Cors) MatchOrigin(origin string) bool {
 }
 
 // WriteHeader write cors headers
-func (c *Cors) WriteHeader(header http.Header) {
+func (c *Config) WriteHeader(header http.Header) {
 	setHeaderValues(header, "Allow", c.AllowMethod)
 	setHeaderValues(header, "Access-Control-Allow-Origin", c.AllowOrigin)
 	setHeaderValues(header, "Access-Control-Allow-Methods", c.AllowMethod)

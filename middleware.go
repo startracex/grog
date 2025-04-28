@@ -39,7 +39,7 @@ func Recovery() HandlerFunc {
 }
 
 // Cors custom CORS config
-func Cors(c *cors.Cors) HandlerFunc {
+func Cors(c *cors.Config) HandlerFunc {
 	return func(req Request, res Response) {
 		c.WriteHeader(res.Header())
 		req.Next(res)
