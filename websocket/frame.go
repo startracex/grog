@@ -17,16 +17,16 @@ const (
 )
 
 var (
-	OPCODE0   = errors.New("OPCODE 0")
-	OPCODE1   = errors.New("OPCODE 1")
-	OPCODE2   = errors.New("OPCODE 2")
-	OPCODE8   = errors.New("OPCODE 8")
-	OPCODE9   = errors.New("OPCODE 9")
-	OPCODE10  = errors.New("OPCODE 10")
-	OPCODE3_7 = errors.New("OPCODE 3-7")
-	FINNOT1   = errors.New("FIN NOT 1")
-	RSVNOT0   = errors.New("RSV NOT 0")
-	CLOSED    = errors.New("CLOSED")
+	ErrOpcode0   = errors.New("OPCODE 0")
+	ErrOpcode1   = errors.New("OPCODE 1")
+	ErrOpcode2   = errors.New("OPCODE 2")
+	ErrOpcode8   = errors.New("OPCODE 8")
+	ErrOpcode9   = errors.New("OPCODE 9")
+	ErrOpcode10  = errors.New("OPCODE 10")
+	ErrOpcode3_7 = errors.New("OPCODE 3-7")
+	ErrFinNot1   = errors.New("FIN NOT 1")
+	ErrRsvNot0   = errors.New("RSV NOT 0")
+	ErrClosed    = errors.New("CLOSED")
 )
 
 // ReadFrame read bytes from reader
@@ -41,22 +41,22 @@ func ReadFrame(reader *bufio.Reader) ([]byte, error) {
 	rsv3 := firstByte&0x10 == 0x10
 	opcode := firstByte & 0x0F
 	if !fin {
-		return nil, FINNOT1
+		return nil, ErrFinNot1
 	}
 	switch opcode {
 	case 0:
-		return nil, OPCODE0
+		return nil, ErrOpcode0
 	case 3, 4, 5, 6, 7:
-		return nil, OPCODE3_7
+		return nil, ErrOpcode3_7
 	case 8:
-		return nil, OPCODE8
+		return nil, ErrOpcode8
 	case 9:
-		return nil, OPCODE9
+		return nil, ErrOpcode9
 	case 10:
-		return nil, OPCODE10
+		return nil, ErrOpcode10
 	}
 	if rsv1 || rsv2 || rsv3 {
-		return nil, RSVNOT0
+		return nil, ErrRsvNot0
 	}
 
 	secondByte, err := reader.ReadByte()
@@ -105,9 +105,9 @@ func ReadFrame(reader *bufio.Reader) ([]byte, error) {
 
 	switch opcode {
 	case 1:
-		return payloadData, OPCODE1
+		return payloadData, ErrOpcode1
 	case 2:
-		return payloadData, OPCODE2
+		return payloadData, ErrOpcode2
 	}
 	return payloadData, nil
 }
@@ -162,7 +162,7 @@ func Ping(conn net.Conn, bt []byte, d time.Duration) error {
 
 	select {
 	case err := <-er:
-		if errors.Is(err, OPCODE10) {
+		if errors.Is(err, ErrOpcode10) {
 			return nil
 		}
 		return errors.New("NOT PONG")
@@ -174,7 +174,7 @@ func Ping(conn net.Conn, bt []byte, d time.Duration) error {
 // Pone sends pong to connection
 func Pone(conn net.Conn) error {
 	data, err := ReadFrame(bufio.NewReader(conn))
-	if !errors.Is(err, OPCODE9) {
+	if !errors.Is(err, ErrOpcode9) {
 		return errors.New("NOT PING")
 	}
 	err = WriteFrame(conn, data, PONG)

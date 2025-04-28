@@ -69,7 +69,7 @@ func Upgrade(w http.ResponseWriter, r *http.Request) *WS {
 // Send data to conn with datatype
 func (ws *WS) Send(data []byte, datatype int) error {
 	if ws.Closed {
-		return CLOSED
+		return ErrClosed
 	}
 	return WriteFrame(ws.Conn, data, datatype)
 }
@@ -77,15 +77,15 @@ func (ws *WS) Send(data []byte, datatype int) error {
 // Message wait for a message
 func (ws *WS) Message() ([]byte, error) {
 	data, err := ReadFrame(ws.Reader)
-	if errors.Is(err, OPCODE8) || errors.Is(err, io.EOF) { // OPCODE8 / EOF close
+	if errors.Is(err, ErrOpcode8) || errors.Is(err, io.EOF) { // OPCODE 8 close / EOF close
 		ws.Closed = true
-		return nil, CLOSED
-	} else if errors.Is(err, OPCODE9) { // OPCODE9 write PONG
+		return nil, ErrClosed
+	} else if errors.Is(err, ErrOpcode9) { // OPCODE 9 ping
 		err := WriteFrame(ws.Conn, data, PONG)
 		if err != nil {
 			return nil, err
 		}
-		return data, OPCODE9
+		return data, ErrOpcode9
 	} else { // OPCODE Other
 		return data, nil
 	}
@@ -94,7 +94,7 @@ func (ws *WS) Message() ([]byte, error) {
 // Close connection
 func (ws *WS) Close() error {
 	if ws.Closed {
-		return CLOSED
+		return ErrClosed
 	} else {
 		ws.Closed = true
 		return ws.Conn.Close()
@@ -103,7 +103,7 @@ func (ws *WS) Close() error {
 
 func (ws *WS) Ping(bt []byte, d time.Duration) error {
 	if ws.Closed {
-		return CLOSED
+		return ErrClosed
 	}
 	return Ping(ws.Conn, bt, d)
 }
