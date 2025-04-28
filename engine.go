@@ -2,7 +2,6 @@ package grog
 
 import (
 	"bytes"
-	"fmt"
 	"html/template"
 	"net/http"
 	"strings"
@@ -84,31 +83,29 @@ func (e *Engine) LoadFunc(funcMap template.FuncMap) {
 	e.FuncMap = funcMap
 }
 
-// ListenAndServe start a server
-func (e *Engine) ListenAndServe(addr string) error {
-	return http.ListenAndServe(mustPort(addr), e)
-}
-
-// Run call ListenAndServe or ListenAndServeTLS if it has filePath slice
-func (e *Engine) Run(addr string, filePath ...string) error {
-	addr = mustPort(addr)
-	if len(filePath) > 1 {
-		fmt.Println("Listen and serve TLS at https://" + Host + addr)
-		return e.ListenAndServeTLS(addr, filePath[0], filePath[1])
-	}
-	fmt.Println("Listen and serve at http://" + Host + addr)
-	return e.ListenAndServe(addr)
-}
-
-// ListenAndServeTLS start a server with TLS
-func (e *Engine) ListenAndServeTLS(addr, cert, key string) error {
-	return http.ListenAndServeTLS(mustPort(addr), cert, key, e)
-}
-
-// mustPort make sure addr is a valid port
-func mustPort(addr string) string {
+func normalizeAddr(addr string) string {
 	if !strings.HasPrefix(addr, ":") {
 		return ":" + addr
 	}
 	return addr
+}
+
+// ListenAndServe start a server
+func (e *Engine) ListenAndServe(addr string) error {
+	return http.ListenAndServe(normalizeAddr(addr), e)
+}
+
+// Run call ListenAndServe
+func (e *Engine) Run(addr string) error {
+	return e.ListenAndServe(addr)
+}
+
+// RunTLS call ListenAndServeTLS
+func (e *Engine) RunTLS(addr string, cert, key string) error {
+	return e.ListenAndServeTLS(addr, cert, key)
+}
+
+// ListenAndServeTLS start a server with TLS
+func (e *Engine) ListenAndServeTLS(addr, cert, key string) error {
+	return http.ListenAndServeTLS(normalizeAddr(addr), cert, key, e)
 }
