@@ -138,14 +138,19 @@ func (r Response) ContentType(value string) {
 	r.SetHeader("Content-Type", value)
 }
 
+type ErrorBuilder interface {
+	error
+	Build(response Response)
+}
+
 // Error send error
 func (r Response) Error(err error) {
 	if err == nil {
 		return
 	}
-	var responseError ErrorBuilder
-	if errors.As(err, &responseError) {
-		r.Engine.WriteError(r, responseError)
+	var errorBuilder ErrorBuilder
+	if errors.As(err, &errorBuilder) {
+		errorBuilder.Build(r)
 		return
 	}
 	code := http.StatusInternalServerError

@@ -19,7 +19,6 @@ type Engine struct {
 	FuncMap         template.FuncMap
 	noRouteHandler  []HandlerFunc
 	noMethodHandler []HandlerFunc
-	WriteError      func(Response, ErrorBuilder)
 }
 
 // ServeHTTP for http.ListenAndServe
