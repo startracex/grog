@@ -5,33 +5,11 @@ import "github.com/startracex/grog/tire"
 // HandlersNest pattern -> method -> []HandlerFunc
 type HandlersNest map[string]map[string][]HandlerFunc
 
-// append handlers
 func (h HandlersNest) append(pattern, method string, handlers []HandlerFunc) {
 	if _, ok := h[pattern]; !ok {
 		h[pattern] = make(map[string][]HandlerFunc)
 	}
 	h[pattern][method] = append(h[pattern][method], handlers...)
-}
-
-func (h HandlersNest) hasPattern(pattern string) bool {
-	_, ok := h[pattern]
-	return ok
-}
-
-func (h HandlersNest) hasMethod(pattern, method string) bool {
-	if h.hasPattern(pattern) {
-		_, ok := h[pattern][method]
-		return ok
-	}
-	return false
-}
-
-func (h HandlersNest) allPatterns() []string {
-	keys := make([]string, 0, len(h))
-	for k := range h {
-		keys = append(keys, k)
-	}
-	return keys
 }
 
 func (h HandlersNest) allMethods(pattern string) []string {
