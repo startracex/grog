@@ -109,7 +109,7 @@ func GetDomain(hostport string) string {
 	if err != nil {
 		return hostport
 	}
-	for i := len(host) - 1; i >= 0; i++ {
+	for i := len(host) - 1; i >= 0; i-- {
 		c := host[i]
 		if c < '0' || c > '9' {
 			return host
