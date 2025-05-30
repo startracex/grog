@@ -2,8 +2,6 @@
 
 grog is a zero dependency web framework.
 
-It provides APIs similar to `gin` and `express`.
-
 ## Import
 
 ```sh
@@ -20,67 +18,23 @@ import (
 
 ```go
 engine := grog.New()
-engine.GET("/", func (req grog.Request, res grog.Response) {
-    res.String("Hello, world!")
+engine.GET("/", func (c *grog.Context) {
+    c.Writer.Write([]byte("Hello World!"))
 })
 engine.Run("9000")
 ```
 
-```plain
-Listen and serve at http://127.0.0.1:9000
-```
-
-### Middleware
+### With multiple domains
 
 ```go
 engine := grog.New()
-engine.Use(/* ...middlewares */)
-```
-
-#### Defaults middlewares
-
-```go
-engine := grog.Default()
-```
-
-```go
-engine := grog.New()
-engine.Use(grog.DefaultMiddleware...)
-```
-
-### Router
-
-#### Router group
-
-```go
-engine := grog.Default()
-apiGroup := engine.Group("/api")
-apiGroup.GET("/get-something", func (req Request, res Response) {
-
+pagesDomain:=engine.Domain("pages.localhost")
+pagesDomain.GET("/", func (c *grog.Context) {
+    c.Writer.Write([]byte("Hello Pages!"))
 })
-```
-
-### Serve file
-
-```go
-engine := grog.New()
-engine.Public("/favicon.ico", "./public/favicon.ico")
-engine.Public("/public", "./public")
-```
-
-### WebSocket
-
-```go
-wsg := websocket.NewWSGroup()
-engine.GET("/ws", func(request grog.Request, response grog.Response) {
-    ws := grog.Upgrade(request, response)
-    wsg.Add(ws)
-    for {
-        message := wsg.Message()
-        if ws.Closed {
-            break
-        }
-        wsg.Send(message, websocket.TEXT)
-    }
+apiDomain:=engine.Domain("api.localhost")
+apiDomain.GET("/", func (c *grog.Context) {
+    c.Writer.Write([]byte("Hello APIs!"))
 })
+engine.Run("9000")
 ```
