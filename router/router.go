@@ -1,4 +1,4 @@
-package tire
+package router
 
 import (
 	"sort"
@@ -11,50 +11,52 @@ const (
 	MatchMulti
 )
 
-func NewRouteTree() *RouteTree {
-	return &RouteTree{
-		children: make([]*RouteTree, 0),
+func NewRouter[T any]() *Router[T] {
+	return &Router[T]{
+		children: make([]*Router[T], 0),
 	}
 }
 
-type RouteTree struct {
+type Router[T any] struct {
 	Pattern  string
-	part     string
-	children []*RouteTree
-	match    int
+	Part     string
+	children []*Router[T]
+	Match    int
+	Value    T
 }
 
-func (rt *RouteTree) InsertPattern(pattern string) {
+func (rt *Router[T]) InsertPattern(pattern string, value T) {
 	parts := SplitSlash(pattern)
-	rt.Insert(pattern, parts, 0)
+	rt.Insert(pattern, parts, 0, value)
 }
 
-func (rt *RouteTree) Insert(pattern string, parts []string, height int) {
+func (rt *Router[T]) Insert(pattern string, parts []string, height int, value T) {
 	defer rt.Sort()
 
 	if len(parts) == height {
 		rt.Pattern = pattern
+		rt.Value = value
 		return
 	}
 	part := parts[height]
 	spec := rt.findStrict(part)
 	if spec == nil {
-		spec = &RouteTree{
-			part:  part,
-			match: Dynamic(part).matchType,
+		spec = &Router[T]{
+			Part:  part,
+			Match: Dynamic(part).matchType,
 		}
 		rt.children = append(rt.children, spec)
 	}
-	spec.Insert(pattern, parts, height+1)
+	spec.Insert(pattern, parts, height+1, value)
 }
 
-func (rt *RouteTree) SearchPattern(pattern string) *RouteTree {
+func (rt *Router[T]) SearchPattern(pattern string) *Router[T] {
 	parts := SplitSlash(pattern)
 	return rt.Search(parts, 0)
 }
 
-func (rt *RouteTree) Search(parts []string, height int) *RouteTree {
-	if len(parts) == height || Dynamic(rt.part).matchType == MatchMulti {
+func (rt *Router[T]) Search(parts []string, height int) *Router[T] {
+	if len(parts) == height || Dynamic(rt.Part).matchType == MatchMulti {
 		if rt.Pattern == "" {
 			return nil
 		}
@@ -71,28 +73,28 @@ func (rt *RouteTree) Search(parts []string, height int) *RouteTree {
 	return nil
 }
 
-func (rt *RouteTree) findStrict(part string) *RouteTree {
+func (rt *Router[T]) findStrict(part string) *Router[T] {
 	for _, child := range rt.children {
-		if child.part == part {
+		if child.Part == part {
 			return child
 		}
 	}
 	return nil
 }
 
-func (rt *RouteTree) filterWild(part string) []*RouteTree {
-	nodes := make([]*RouteTree, 0)
+func (rt *Router[T]) filterWild(part string) []*Router[T] {
+	nodes := make([]*Router[T], 0)
 	for _, child := range rt.children {
-		if child.part == part || child.match > 0 {
+		if child.Part == part || child.Match > 0 {
 			nodes = append(nodes, child)
 		}
 	}
 	return nodes
 }
 
-func (rt *RouteTree) Sort() {
+func (rt *Router[T]) Sort() {
 	sort.Slice(rt.children, func(a, b int) bool {
-		return rt.children[a].match < rt.children[b].match
+		return rt.children[a].Match < rt.children[b].Match
 	})
 	for _, child := range rt.children {
 		child.Sort()
