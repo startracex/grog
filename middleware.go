@@ -2,12 +2,13 @@ package grog
 
 import (
 	"fmt"
-	"github.com/startracex/grog/cors"
 	"log"
 	"net/http"
 	"runtime"
 	"strings"
 	"time"
+
+	"github.com/startracex/grog/cors"
 )
 
 var DefaultMiddleware = []HandlerFunc{Logger(), Recovery(), AutoOptions()}
@@ -21,7 +22,7 @@ func Logger() HandlerFunc {
 	}
 }
 
-var ErrRecovery = fmt.Errorf(http.StatusText(500))
+var ErrRecovery = fmt.Errorf("%s", http.StatusText(500))
 
 // Recovery error returns 500
 func Recovery() HandlerFunc {
@@ -50,16 +51,13 @@ func Cors(c *cors.Config) HandlerFunc {
 func AutoOptions() HandlerFunc {
 	return func(req Request, res Response) {
 		res.SetHeader("Access-Control-Allow-Origin", req.Origin())
+		methods := req.Engine.Routes.AllMethods(req.Pattern)
+
+		res.SetHeader("Access-Control-Allow-Methods", strings.Join(methods, ", "))
+		res.SetHeader("Access-Control-Allow-Headers", "*")
+
 		if req.Method == OPTIONS {
-			methods := strings.Join(req.Engine.router.handlers.allMethods(req.Pattern), ", ")
-			if methods == "" {
-				res.WriteHeader(404)
-			} else {
-				res.SetHeader("Access-Control-Allow-Methods", methods)
-				res.SetHeader("Access-Control-Allow-Headers", "*")
-				res.SetHeader("Access-Control-Allow-Credentials", "true")
-				res.WriteHeader(204)
-			}
+			res.WriteHeader(204)
 			req.Abort()
 			return
 		}
