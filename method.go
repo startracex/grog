@@ -91,12 +91,12 @@ func (group *RouterGroup) ANY(pattern string, handlers ...HandlerFunc) {
 
 // NoRoute accept not handlers for not found route
 func (group *RouterGroup) NoRoute(handlers ...HandlerFunc) {
-	group.engine.noRouteHandler = handlers
+	group.Engine.noRouteHandler = handlers
 }
 
 // NoMethod accept not handlers for not found method
 func (group *RouterGroup) NoMethod(handlers ...HandlerFunc) {
-	group.engine.noMethodHandler = handlers
+	group.Engine.noMethodHandler = handlers
 }
 
 // Public handle file, or directory

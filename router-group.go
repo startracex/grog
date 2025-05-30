@@ -1,28 +1,27 @@
 package grog
 
 type RouterGroup struct {
-	prefix      string
-	middlewares []HandlerFunc
-	parent      *RouterGroup
-	engine      *Engine
+	Prefix      string
+	Middlewares []HandlerFunc
+	Engine *Engine
 }
 
 func (group *RouterGroup) Group(prefix string, middlewares ...HandlerFunc) *RouterGroup {
-	engine := group.engine
+	engine := group.Engine
 	newGroup := &RouterGroup{
-		prefix: group.prefix + prefix,
-		parent: group,
-		engine: engine,
+		Prefix: group.Prefix + prefix,
+		Engine:      engine,
+		Middlewares: middlewares,
 	}
-	newGroup.middlewares = append(newGroup.middlewares, middlewares...)
+	newGroup.Middlewares = append(newGroup.Middlewares, middlewares...)
 	engine.groups = append(engine.groups, newGroup)
 	return newGroup
 }
 
 func (group *RouterGroup) AddRoute(method string, pattern string, handlers []HandlerFunc) {
-	group.engine.router.register(method, group.prefix+pattern, handlers)
+	group.Engine.router.register(method, group.Prefix+pattern, handlers)
 }
 
 func (group *RouterGroup) Use(middlewares ...HandlerFunc) {
-	group.middlewares = append(group.middlewares, middlewares...)
+	group.Middlewares = append(group.Middlewares, middlewares...)
 }
