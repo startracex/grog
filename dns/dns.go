@@ -9,6 +9,7 @@ type dnsNode[T any] struct {
 	label    string
 	children map[string]*dnsNode[T]
 	value    T
+	valid    bool
 }
 
 type DNS[T any] struct {
@@ -30,6 +31,7 @@ func (t *DNS[T]) Insert(domain string, value T) {
 			label:    "*",
 			children: make(map[string]*dnsNode[T]),
 			value:    value,
+			valid:    true,
 		}
 		return
 	}
@@ -61,6 +63,7 @@ func (t *DNS[T]) insertLabels(labels []string, value T) {
 	}
 
 	current.value = value
+	current.valid = true
 }
 
 func (t *DNS[T]) Match(domain string) (T, bool) {
@@ -70,7 +73,7 @@ func (t *DNS[T]) Match(domain string) (T, bool) {
 
 func (t *DNS[T]) matchRecursive(node *dnsNode[T], labels []string, level int) (T, bool) {
 	if level < 0 {
-		return node.value, true
+		return node.value, node.valid
 	}
 
 	currentLabel := labels[level]
@@ -82,10 +85,12 @@ func (t *DNS[T]) matchRecursive(node *dnsNode[T], labels []string, level int) (T
 	}
 
 	if child, exists := node.children["*"]; exists {
+		if level == 0 {
+			return child.value, true
+		}
 		if value, ok := t.matchRecursive(child, labels, level-1); ok {
 			return value, true
 		}
-		return child.value, true
 	}
 
 	if child, exists := node.children["+"]; exists {
