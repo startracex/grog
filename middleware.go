@@ -11,7 +11,7 @@ import (
 	"github.com/startracex/grog/cors"
 )
 
-// var DefaultMiddleware = []HandlerFunc{Logger(), Recovery(), AutoOptions()}
+var DefaultMiddlewares = []HandlerFunc{Logger(), Recovery(), AutoOptions()}
 
 // Logger record the request path, method
 func Logger() HandlerFunc {
