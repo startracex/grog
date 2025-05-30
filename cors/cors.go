@@ -20,12 +20,11 @@ type Config struct {
 // AllowAll allow all
 func AllowAll() *Config {
 	return &Config{
-		AllowOrigin:      []string{"*"},
-		AllowMethod:      []string{"*"},
-		AllowHeaders:     []string{"*"},
-		AllowCredentials: true,
-		ExposeHeaders:    []string{"*"},
-		MaxAge:           86400,
+		AllowOrigin:   []string{"*"},
+		AllowMethod:   []string{"*"},
+		AllowHeaders:  []string{"*"},
+		ExposeHeaders: []string{"*"},
+		MaxAge:        86400,
 	}
 }
 
