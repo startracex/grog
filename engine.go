@@ -14,9 +14,9 @@ import (
 var Host = "127.0.0.1"
 
 type Engine struct {
-	*RouterGroup
+	*RoutesGroup
 	Routes          *Routes
-	groups          []*RouterGroup
+	groups          []*RoutesGroup
 	Pool            sync.Pool
 	Template        *template.Template
 	NoRouteHandler  []HandlerFunc
@@ -87,8 +87,8 @@ func New() *Engine {
 			},
 		},
 	}
-	engine.RouterGroup = &RouterGroup{Engine: engine}
-	engine.groups = []*RouterGroup{engine.RouterGroup}
+	engine.RoutesGroup = &RoutesGroup{Engine: engine}
+	engine.groups = []*RoutesGroup{engine.RoutesGroup}
 	return engine
 }
 

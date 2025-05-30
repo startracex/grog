@@ -1,14 +1,14 @@
 package grog
 
-type RouterGroup struct {
+type RoutesGroup struct {
 	Prefix      string
 	Middlewares []HandlerFunc
 	Engine *Engine
 }
 
-func (group *RouterGroup) Group(prefix string, middlewares ...HandlerFunc) *RouterGroup {
+func (group *RoutesGroup) Group(prefix string, middlewares ...HandlerFunc) *RoutesGroup {
 	engine := group.Engine
-	newGroup := &RouterGroup{
+	newGroup := &RoutesGroup{
 		Prefix: group.Prefix + prefix,
 		Engine:      engine,
 		Middlewares: middlewares,
@@ -18,10 +18,10 @@ func (group *RouterGroup) Group(prefix string, middlewares ...HandlerFunc) *Rout
 	return newGroup
 }
 
-func (group *RouterGroup) AddRoute(method string, pattern string, handlers []HandlerFunc) {
+func (group *RoutesGroup) AddRoute(method string, pattern string, handlers []HandlerFunc) {
 	group.Engine.Routes.AddRoute(method, group.Prefix+pattern, handlers)
 }
 
-func (group *RouterGroup) Use(middlewares ...HandlerFunc) {
+func (group *RoutesGroup) Use(middlewares ...HandlerFunc) {
 	group.Middlewares = append(group.Middlewares, middlewares...)
 }
