@@ -19,7 +19,7 @@ func (group *RouterGroup) Group(prefix string, middlewares ...HandlerFunc) *Rout
 }
 
 func (group *RouterGroup) AddRoute(method string, pattern string, handlers []HandlerFunc) {
-	group.Engine.router.register(method, group.Prefix+pattern, handlers)
+	group.Engine.Routes.AddRoute(method, group.Prefix+pattern, handlers)
 }
 
 func (group *RouterGroup) Use(middlewares ...HandlerFunc) {
