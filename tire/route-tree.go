@@ -6,17 +6,27 @@ import (
 )
 
 const (
-	matchStrict = iota
-	matchSingle
-	matchMulti
+	MatchStrict = iota
+	MatchSingle
+	MatchMulti
 )
+
+func NewRouteTree() *RouteTree {
+	return &RouteTree{
+		children: make([]*RouteTree, 0),
+	}
+}
 
 type RouteTree struct {
 	Pattern  string
 	part     string
 	children []*RouteTree
 	match    int
-	sorted   bool
+}
+
+func (rt *RouteTree) InsertPattern(pattern string) {
+	parts := SplitSlash(pattern)
+	rt.Insert(pattern, parts, 0)
 }
 
 func (rt *RouteTree) Insert(pattern string, parts []string, height int) {
@@ -34,17 +44,17 @@ func (rt *RouteTree) Insert(pattern string, parts []string, height int) {
 			match: Dynamic(part).matchType,
 		}
 		rt.children = append(rt.children, spec)
-		rt.sorted = false
 	}
 	spec.Insert(pattern, parts, height+1)
 }
 
-func (rt *RouteTree) Search(parts []string, height int) *RouteTree {
-	if !rt.sorted {
-		rt.Sort()
-	}
+func (rt *RouteTree) SearchPattern(pattern string) *RouteTree {
+	parts := SplitSlash(pattern)
+	return rt.Search(parts, 0)
+}
 
-	if len(parts) == height || Dynamic(rt.part).matchType == matchMulti {
+func (rt *RouteTree) Search(parts []string, height int) *RouteTree {
+	if len(parts) == height || Dynamic(rt.part).matchType == MatchMulti {
 		if rt.Pattern == "" {
 			return nil
 		}
@@ -81,16 +91,12 @@ func (rt *RouteTree) filterWild(part string) []*RouteTree {
 }
 
 func (rt *RouteTree) Sort() {
-	if rt == nil {
-		return
-	}
 	sort.Slice(rt.children, func(a, b int) bool {
 		return rt.children[a].match < rt.children[b].match
 	})
 	for _, child := range rt.children {
 		child.Sort()
 	}
-	rt.sorted = true
 }
 
 type DynamicType struct {
@@ -103,27 +109,27 @@ func Dynamic(key string) DynamicType {
 		if affix(key, "{", "}") || affix(key, "[", "]") {
 			key = key[1 : len(key)-1]
 			result := Dynamic(key)
-			if result.matchType == matchStrict {
-				result.matchType = matchSingle
+			if result.matchType == MatchStrict {
+				result.matchType = MatchSingle
 			}
 			return result
 		}
 		if len(key) > 1 {
 			a := key[0]
 			if a == ':' {
-				return DynamicType{key[1:], matchSingle}
+				return DynamicType{key[1:], MatchSingle}
 			}
 			if a == '*' {
-				return DynamicType{key[1:], matchMulti}
+				return DynamicType{key[1:], MatchMulti}
 			}
 			if strings.HasPrefix(key, "...") {
-				return DynamicType{key[3:], matchMulti}
+				return DynamicType{key[3:], MatchMulti}
 			}
 		}
 	}
 	return DynamicType{
 		key:       key,
-		matchType: matchStrict,
+		matchType: MatchStrict,
 	}
 }
 
@@ -137,9 +143,9 @@ func ParseParams(path string, pattern string) map[string]string {
 	params := make(map[string]string)
 	for i := range patternSplit {
 		info := Dynamic(patternSplit[i])
-		if info.matchType == matchSingle {
+		if info.matchType == MatchSingle {
 			params[info.key] = pathSplit[i]
-		} else if info.matchType == matchMulti {
+		} else if info.matchType == MatchMulti {
 			params[info.key] = strings.Join(pathSplit[i:], "/")
 			break
 		}
