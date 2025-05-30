@@ -42,10 +42,10 @@ func (r *Routes) Handle(req *InnerRequest, res *InnerResponse) {
 		if ok {
 			req.appendHandlers(handlers)
 		} else {
-			req.appendHandlers(req.Engine.noMethodHandler)
+			req.appendHandlers(req.Engine.NoMethodHandler)
 		}
 	} else {
-		req.appendHandlers(req.Engine.noRouteHandler)
+		req.appendHandlers(req.Engine.NoRouteHandler)
 	}
 
 	req.Next(res)

@@ -6,50 +6,58 @@ import (
 	"net/http"
 	"strings"
 	"sync"
+
+	"github.com/startracex/grog/dns"
 )
 
 var Host = "127.0.0.1"
 
 type Engine struct {
 	*RouterGroup
-	router          *Router
+	Routes          *Routes
 	groups          []*RouterGroup
 	Pool            sync.Pool
-	Template        template.Template
-	FuncMap         template.FuncMap
-	noRouteHandler  []HandlerFunc
-	noMethodHandler []HandlerFunc
+	Template        *template.Template
+	NoRouteHandler  []HandlerFunc
+	NoMethodHandler []HandlerFunc
+	DNS             *dns.DNS[*Engine]
 }
 
 // ServeHTTP for http.ListenAndServe
 func (e *Engine) ServeHTTP(res http.ResponseWriter, req *http.Request) {
+	domain := dns.GetDomain(req.Host)
+	if e.DNS != nil {
+		matchEngine, ok := e.DNS.Match(domain)
+		if ok {
+			matchEngine.ServeHTTP(res, req)
+			return
+		}
+	}
 	newRequest := NewRequest(req)
 	newRequest.Engine = e
 	for _, group := range e.groups {
-		if strings.HasPrefix(req.URL.Path, group.prefix+"/") {
-			newRequest.appendHandlers(group.middlewares)
+		if strings.HasPrefix(req.URL.Path, group.Prefix+"/") {
+			newRequest.appendHandlers(group.Middlewares)
 		}
 	}
 
 	newResponse := NewResponse(res)
 	newResponse.Engine = e
-	e.router.Handle(&newRequest, &newResponse)
+	e.Routes.Handle(&newRequest, &newResponse)
 }
 
 // New create engine
 func New() *Engine {
-	engine := &Engine{router: NewRouter()}
-	engine.RouterGroup = &RouterGroup{engine: engine}
-	engine.groups = []*RouterGroup{engine.RouterGroup}
-	engine.Pool.New = func() any {
-		return bytes.NewBuffer(make([]byte, 4096))
+	engine := &Engine{
+		Routes: NewRouter(),
+		Pool: sync.Pool{
+			New: func() any {
+				return bytes.NewBuffer(make([]byte, 4096))
+			},
+		},
 	}
-	engine.NoRoute(func(request Request, response Response) {
-		http.Error(response, http.StatusText(404), 404)
-	})
-	engine.NoMethod(func(request Request, response Response) {
-		http.Error(response, http.StatusText(405), 405)
-	})
+	engine.RouterGroup = &RouterGroup{Engine: engine}
+	engine.groups = []*RouterGroup{engine.RouterGroup}
 	return engine
 }
 
@@ -57,29 +65,42 @@ func New() *Engine {
 func Default() *Engine {
 	engine := New()
 	engine.Use(DefaultMiddleware...)
+	engine.NoRoute(func(request Request, response Response) {
+		http.Error(response, http.StatusText(http.StatusNotFound), http.StatusNotFound)
+	})
+	engine.NoMethod(func(request Request, response Response) {
+		http.Error(response, http.StatusText(http.StatusMethodNotAllowed), http.StatusMethodNotAllowed)
+	})
 	return engine
 }
 
-// BaseURL set engine's prefix
-func (e *Engine) BaseURL(base string) {
-	if base != "/" {
-		e.prefix = base
+func (e *Engine) Domain(domains ...string) *Engine {
+	newEngine := New()
+	newEngine.NoMethodHandler = e.NoMethodHandler
+	newEngine.NoRouteHandler = e.NoRouteHandler
+	newEngine.Use(e.Middlewares...)
+
+	if e.DNS == nil {
+		e.DNS = dns.NewDNS[*Engine]()
 	}
+
+	for _, domain := range domains {
+		e.DNS.Insert(domain, newEngine)
+	}
+	return newEngine
 }
 
-// SetPoolNew Replace the default NEW func
-func (e *Engine) SetPoolNew(f func() any) {
+// PoolNew Replace the default NEW func
+func (e *Engine) PoolNew(f func() any) {
 	e.Pool.New = f
 }
 
-// LoadHTMLFiles load the path file
-func (e *Engine) LoadHTMLFiles(path ...string) {
-	e.Template = *template.Must(template.New("").Funcs(e.FuncMap).ParseFiles(path...))
-}
-
-// LoadFunc load func map for template
-func (e *Engine) LoadFunc(funcMap template.FuncMap) {
-	e.FuncMap = funcMap
+// ParseTemplateFiles load the path file
+func (e *Engine) ParseTemplateFiles(funcMap template.FuncMap, path ...string) {
+	if len(path) == 0 {
+		return
+	}
+	e.Template = template.Must(template.New("").Funcs(funcMap).ParseFiles(path...))
 }
 
 func normalizeAddr(addr string) string {
@@ -100,7 +121,7 @@ func (e *Engine) Run(addr string) error {
 }
 
 // RunTLS call ListenAndServeTLS
-func (e *Engine) RunTLS(addr string, cert, key string) error {
+func (e *Engine) RunTLS(addr, cert, key string) error {
 	return e.ListenAndServeTLS(addr, cert, key)
 }
 
