@@ -8,6 +8,7 @@ import (
 	"sync"
 
 	"github.com/startracex/grog/dns"
+	"github.com/startracex/grog/router"
 )
 
 var Host = "127.0.0.1"
@@ -33,26 +34,47 @@ func (e *Engine) ServeHTTP(res http.ResponseWriter, req *http.Request) {
 			return
 		}
 	}
-	newRequest := NewRequest(req)
-	newRequest.Engine = e
-	for _, group := range e.groups {
-		if strings.HasPrefix(req.URL.Path, group.Prefix+"/") {
-			newRequest.appendHandlers(group.Middlewares)
+
+	path := req.URL.Path
+	var pattern string
+	var params map[string]string
+	var methods []string
+	hf := make([]HandlerFunc, 0)
+
+	node := e.Routes.Search(path)
+	if node != nil {
+		pattern = node.Pattern
+		handler, ok := node.Value[req.Method]
+		if !ok {
+			hf = e.NoMethodHandler
+		} else {
+			methods = make([]string, len(node.Value))
+			for k := range node.Value {
+				methods = append(methods, k)
+			}
+			for _, group := range e.groups {
+				if strings.HasPrefix(path, group.Prefix+"/") {
+					hf = append(hf, group.Middlewares...)
+				}
+			}
+			hf = append(hf, handler...)
 		}
-	}
-
-	newResponse := NewResponse(res)
-	newResponse.Engine = e
-	handlers, err := e.Routes.GetHandlers(req.URL.Path, req.Method)
-
-	if err == ErrNoRoute {
-		newRequest.appendHandlers(e.NoRouteHandler)
-	} else if err == ErrNoMethod {
-		newRequest.appendHandlers(e.NoMethodHandler)
+		params = router.ParseParams(path, node.Pattern)
 	} else {
-		newRequest.appendHandlers(handlers)
+		hf = e.NoMethodHandler
 	}
-	newRequest.Next(&newResponse)
+
+	c := &Context{
+		Request:  req,
+		Writer:   res,
+		Engine:   e,
+		Handlers: hf,
+		Index:    -1,
+		Pattern:  pattern,
+		Params:   params,
+		Methods:  methods,
+	}
+	c.Next()
 }
 
 // New create engine
@@ -67,19 +89,6 @@ func New() *Engine {
 	}
 	engine.RouterGroup = &RouterGroup{Engine: engine}
 	engine.groups = []*RouterGroup{engine.RouterGroup}
-	return engine
-}
-
-// Default use DefaultMiddleware
-func Default() *Engine {
-	engine := New()
-	engine.Use(DefaultMiddleware...)
-	engine.NoRoute(func(request Request, response Response) {
-		http.Error(response, http.StatusText(http.StatusNotFound), http.StatusNotFound)
-	})
-	engine.NoMethod(func(request Request, response Response) {
-		http.Error(response, http.StatusText(http.StatusMethodNotAllowed), http.StatusMethodNotAllowed)
-	})
 	return engine
 }
 

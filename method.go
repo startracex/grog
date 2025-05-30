@@ -99,7 +99,7 @@ func (group *RouterGroup) NoMethod(handlers ...HandlerFunc) {
 	group.Engine.NoMethodHandler = handlers
 }
 
-// Public handle file, or directory
+// // Public handle file, or directory
 func (group *RouterGroup) Public(pattern string, path string) {
 	f, err := os.Open(path)
 	if err != nil {
@@ -125,13 +125,12 @@ func (group *RouterGroup) Static(pattern string, path string) {
 // Directory handle directory
 func (group *RouterGroup) Directory(pattern string, root string) {
 	key := "path"
-	handler := func(req *InnerRequest, res *InnerResponse) {
-		file := req.Params[key]
-		if len(file) == 0 {
-			res.Status(401)
-			return
-		}
-		ServeFile(req, res, path.Join(root, file))
+	handler := func(c *Context) {
+		p := c.Params[key]
+		p = strings.ReplaceAll(p, "\\", "/")
+		p = path.Clean(p)
+		p = strings.TrimPrefix(p, "/")
+		ServeFile(c, path.Join(root, p))
 	}
 	pattern = path.Join(pattern, "*"+key)
 	group.GET(pattern, handler)
@@ -140,8 +139,8 @@ func (group *RouterGroup) Directory(pattern string, root string) {
 
 // File handle file
 func (group *RouterGroup) File(pattern string, filepath string) {
-	handler := func(req *InnerRequest, res *InnerResponse) {
-		ServeFile(req, res, filepath)
+	handler := func(c *Context) {
+		ServeFile(c, filepath)
 	}
 	group.GET(pattern, handler)
 	group.HEAD(pattern, handler)

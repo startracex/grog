@@ -17,7 +17,7 @@ func NewRouter() *Routes {
 }
 
 func (r *Routes) AddRoute(method string, pattern string, handlers []HandlerFunc) {
-	node := r.Root.SearchPattern(pattern)
+	node := r.Search(pattern)
 	if node != nil {
 		m := node.Value
 		if _, ok := m[method]; ok {
@@ -27,7 +27,7 @@ func (r *Routes) AddRoute(method string, pattern string, handlers []HandlerFunc)
 		}
 		return
 	}
-	r.Root.InsertPattern(pattern, map[string][]HandlerFunc{
+	r.Root.Insert(pattern, router.SplitSlash(pattern), 0, map[string][]HandlerFunc{
 		method: handlers,
 	})
 }
@@ -35,50 +35,13 @@ func (r *Routes) AddRoute(method string, pattern string, handlers []HandlerFunc)
 var ErrNoRoute = errors.New("grog: no route")
 var ErrNoMethod = errors.New("grog: no method")
 
-func (r *Routes) GetHandlers(pattern, method string) ([]HandlerFunc, error) {
-	node := r.Root.SearchPattern(pattern)
-	if node != nil {
-		handlers, ok := node.Value[method]
-		if ok {
-			return handlers, nil
-		}
-		return nil, ErrNoMethod
-	}
-	return nil, ErrNoRoute
-}
-
-func (r *Routes) Handle(req *InnerRequest, res *InnerResponse) {
-	path := req.Path
-	node := r.Root.SearchPattern(path)
-	if node != nil {
-		pattern := node.Pattern
-		method := req.Method
-		req.Pattern = pattern
-		req.Params = router.ParseParams(path, pattern)
-		handlers, ok := node.Value[method]
-		if ok {
-			req.appendHandlers(handlers)
-		} else {
-			req.appendHandlers(req.Engine.NoMethodHandler)
-		}
-	} else {
-		req.appendHandlers(req.Engine.NoRouteHandler)
-	}
-
-	req.Next(res)
-}
-
-func (r *Routes) Has(pattern, method string) (bool, bool) {
-	node := r.Root.SearchPattern(pattern)
-	if node != nil {
-		_, ok := node.Value[method]
-		return true, ok
-	}
-	return false, false
+func (r *Routes) Search(path string) *router.Router[map[string][]HandlerFunc] {
+	parts := router.SplitSlash(path)
+	return r.Root.Search(parts, 0)
 }
 
 func (r *Routes) AllMethods(pattern string) []string {
-	node := r.Root.SearchPattern(pattern)
+	node := r.Search(pattern)
 	if node != nil {
 		s := make([]string, len(node.Value))
 		for k := range node.Value {

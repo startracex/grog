@@ -11,14 +11,14 @@ import (
 	"github.com/startracex/grog/cors"
 )
 
-var DefaultMiddleware = []HandlerFunc{Logger(), Recovery(), AutoOptions()}
+// var DefaultMiddleware = []HandlerFunc{Logger(), Recovery(), AutoOptions()}
 
 // Logger record the request path, method
 func Logger() HandlerFunc {
-	return func(req *InnerRequest, res *InnerResponse) {
+	return func(c *Context) {
 		t := time.Now()
-		req.Next(res)
-		log.Printf("[%s] %s <%v>", req.Method, req.Path, time.Since(t))
+		c.Next()
+		log.Printf("[%s] %s <%v>", c.Request.Method, c.Request.URL.Path, time.Since(t))
 	}
 }
 
@@ -26,42 +26,42 @@ var ErrRecovery = fmt.Errorf("%s", http.StatusText(500))
 
 // Recovery error returns 500
 func Recovery() HandlerFunc {
-	return func(req *InnerRequest, res *InnerResponse) {
+	return func(c *Context) {
 		defer func() {
 			err := recover()
 			if err != nil {
 				message := fmt.Sprintf("%s", err)
 				log.Printf("%s\n\n", trace(message))
-				res.Error(ErrRecovery)
+				c.Writer.WriteHeader(500)
 			}
 		}()
-		req.Next(res)
+		c.Next()
 	}
 }
 
 // Cors custom CORS config
 func Cors(c *cors.Config) HandlerFunc {
-	return func(req Request, res Response) {
-		c.WriteHeader(res.Header())
-		req.Next(res)
+	return func(ctx *Context) {
+		c.WriteHeader(ctx.Writer.Header())
+		ctx.Next()
 	}
 }
 
 // AutoOptions handle OPTIONS request, allow methods which have been registered
 func AutoOptions() HandlerFunc {
-	return func(req Request, res Response) {
-		res.SetHeader("Access-Control-Allow-Origin", req.Origin())
-		methods := req.Engine.Routes.AllMethods(req.Pattern)
+	return func(c *Context) {
+		header := c.Writer.Header()
+		header.Set("Access-Control-Allow-Origin", c.Request.Header.Get("Origin"))
 
-		res.SetHeader("Access-Control-Allow-Methods", strings.Join(methods, ", "))
-		res.SetHeader("Access-Control-Allow-Headers", "*")
+		header.Set("Access-Control-Allow-Methods", strings.Join(c.Methods, ", "))
+		header.Set("Access-Control-Allow-Headers", "*")
 
-		if req.Method == OPTIONS {
-			res.WriteHeader(204)
-			req.Abort()
+		if c.Request.Method == OPTIONS {
+			c.Writer.WriteHeader(204)
+			c.Abort()
 			return
 		}
-		req.Next(res)
+		c.Next()
 	}
 }
 
