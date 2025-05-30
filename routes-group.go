@@ -3,13 +3,13 @@ package grog
 type RoutesGroup struct {
 	Prefix      string
 	Middlewares []HandlerFunc
-	Engine *Engine
+	Engine      *Engine
 }
 
 func (group *RoutesGroup) Group(prefix string, middlewares ...HandlerFunc) *RoutesGroup {
 	engine := group.Engine
 	newGroup := &RoutesGroup{
-		Prefix: group.Prefix + prefix,
+		Prefix:      group.Prefix + prefix,
 		Engine:      engine,
 		Middlewares: middlewares,
 	}

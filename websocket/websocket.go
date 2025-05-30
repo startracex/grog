@@ -111,6 +111,6 @@ func (ws *WS) Ping(bt []byte, d time.Duration) error {
 	return Ping(ws.Conn, bt, d)
 }
 
-func (ws *WS) Pone(bt []byte, ) error {
+func (ws *WS) Pone(bt []byte) error {
 	return Pone(ws.Conn, bt)
 }
