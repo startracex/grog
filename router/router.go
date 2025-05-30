@@ -25,11 +25,6 @@ type Router[T any] struct {
 	Value    T
 }
 
-func (rt *Router[T]) InsertPattern(pattern string, value T) {
-	parts := SplitSlash(pattern)
-	rt.Insert(pattern, parts, 0, value)
-}
-
 func (rt *Router[T]) Insert(pattern string, parts []string, height int, value T) {
 	defer rt.Sort()
 
@@ -48,11 +43,6 @@ func (rt *Router[T]) Insert(pattern string, parts []string, height int, value T)
 		rt.children = append(rt.children, spec)
 	}
 	spec.Insert(pattern, parts, height+1, value)
-}
-
-func (rt *Router[T]) SearchPattern(pattern string) *Router[T] {
-	parts := SplitSlash(pattern)
-	return rt.Search(parts, 0)
 }
 
 func (rt *Router[T]) Search(parts []string, height int) *Router[T] {
