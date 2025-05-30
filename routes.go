@@ -1,6 +1,8 @@
 package grog
 
 import (
+	"errors"
+
 	"github.com/startracex/grog/router"
 )
 
@@ -28,6 +30,21 @@ func (r *Routes) AddRoute(method string, pattern string, handlers []HandlerFunc)
 	r.Root.InsertPattern(pattern, map[string][]HandlerFunc{
 		method: handlers,
 	})
+}
+
+var ErrNoRoute = errors.New("grog: no route")
+var ErrNoMethod = errors.New("grog: no method")
+
+func (r *Routes) GetHandlers(pattern, method string) ([]HandlerFunc, error) {
+	node := r.Root.SearchPattern(pattern)
+	if node != nil {
+		handlers, ok := node.Value[method]
+		if ok {
+			return handlers, nil
+		}
+		return nil, ErrNoMethod
+	}
+	return nil, ErrNoRoute
 }
 
 func (r *Routes) Handle(req *InnerRequest, res *InnerResponse) {

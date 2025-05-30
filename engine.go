@@ -25,8 +25,8 @@ type Engine struct {
 
 // ServeHTTP for http.ListenAndServe
 func (e *Engine) ServeHTTP(res http.ResponseWriter, req *http.Request) {
-	domain := dns.GetDomain(req.Host)
 	if e.DNS != nil {
+		domain := dns.GetDomain(req.Host)
 		matchEngine, ok := e.DNS.Match(domain)
 		if ok {
 			matchEngine.ServeHTTP(res, req)
@@ -43,7 +43,16 @@ func (e *Engine) ServeHTTP(res http.ResponseWriter, req *http.Request) {
 
 	newResponse := NewResponse(res)
 	newResponse.Engine = e
-	e.Routes.Handle(&newRequest, &newResponse)
+	handlers, err := e.Routes.GetHandlers(req.URL.Path, req.Method)
+
+	if err == ErrNoRoute {
+		newRequest.appendHandlers(e.NoRouteHandler)
+	} else if err == ErrNoMethod {
+		newRequest.appendHandlers(e.NoMethodHandler)
+	} else {
+		newRequest.appendHandlers(handlers)
+	}
+	newRequest.Next(&newResponse)
 }
 
 // New create engine
