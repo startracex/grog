@@ -3,6 +3,7 @@ package grog
 import (
 	"net/http"
 	"os"
+	"time"
 )
 
 // ServeFile is similar to http.ServeFile, but it won't redirect
@@ -12,14 +13,14 @@ func ServeFile(c *Context, filePath string) {
 		return
 	}
 	defer f.Close()
-	ServeContent(c, f)
-}
-
-// ServeContent serve file content
-func ServeContent(c *Context, f *os.File) {
-	s, err := f.Stat()
+	fi, err := f.Stat()
 	if err != nil {
 		return
 	}
-	http.ServeContent(c.Writer, c.Request, f.Name(), s.ModTime(), f)
+	ServeContent(c, fi.Name(), fi.ModTime(), f)
+}
+
+// ServeContent serve file content
+func ServeContent(c *Context, name string, modtime time.Time, f *os.File) {
+	http.ServeContent(c.Writer, c.Request, name, modtime, f)
 }
