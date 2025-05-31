@@ -39,23 +39,16 @@ func Recovery() HandlerFunc {
 	}
 }
 
-// Cors custom CORS config
-func Cors(c *cors.Config) HandlerFunc {
-	return func(ctx *Context) {
-		c.WriteHeader(ctx.Writer.Header())
-		ctx.Next()
-	}
-}
-
 // AutoOptions handle OPTIONS request, allow methods which have been registered
 func AutoOptions() HandlerFunc {
 	return func(c *Context) {
-		header := c.Writer.Header()
-		header.Set("Access-Control-Allow-Origin", c.Request.Header.Get("Origin"))
-
-		header.Set("Access-Control-Allow-Methods", strings.Join(c.Methods, ", "))
-		header.Set("Access-Control-Allow-Headers", "*")
-
+		config := &cors.Config{
+			AllowOrigin:  []string{c.Request.Header.Get("Origin")},
+			AllowMethod:  c.Methods,
+			AllowHeaders: []string{"*"},
+			MaxAge:       86400,
+		}
+		config.WriteHeader(c.Writer.Header())
 		if c.Request.Method == OPTIONS {
 			c.Writer.WriteHeader(204)
 			c.Abort()
