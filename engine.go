@@ -7,7 +7,6 @@ import (
 	"sync"
 
 	"github.com/startracex/grog/dns"
-	"github.com/startracex/grog/router"
 )
 
 var Host = "127.0.0.1"
@@ -36,8 +35,7 @@ func (e *Engine[T]) ServeHTTP(res http.ResponseWriter, req *http.Request) {
 
 	path := req.URL.Path
 	var pattern string
-	var params map[string]string
-	var methods []string
+	var allowMethods []string
 	hf := make([]T, 0)
 
 	node := e.Routes.Search(path)
@@ -47,9 +45,9 @@ func (e *Engine[T]) ServeHTTP(res http.ResponseWriter, req *http.Request) {
 		if !ok {
 			hf = e.NoMethodHandler
 		} else {
-			methods = make([]string, len(node.Value))
+			allowMethods = make([]string, len(node.Value))
 			for k := range node.Value {
-				methods = append(methods, k)
+				allowMethods = append(allowMethods, k)
 			}
 			for _, group := range e.groups {
 				if strings.HasPrefix(path, group.Prefix+"/") {
@@ -58,7 +56,6 @@ func (e *Engine[T]) ServeHTTP(res http.ResponseWriter, req *http.Request) {
 			}
 			hf = append(hf, handler...)
 		}
-		params = router.ParseParams(path, node.Pattern)
 	} else {
 		hf = e.NoMethodHandler
 	}
@@ -67,11 +64,10 @@ func (e *Engine[T]) ServeHTTP(res http.ResponseWriter, req *http.Request) {
 		request:        req,
 		writer:         res,
 		HandlerAdapter: e.Adapter,
-		Handlers:       hf,
-		Index:          -1,
-		Pattern:        pattern,
-		Params:         params,
-		Methods:        methods,
+		handlers:       hf,
+		index:          -1,
+		pattern:        pattern,
+		allowMethods:   allowMethods,
 	}
 	c.Next()
 }
