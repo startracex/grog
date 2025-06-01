@@ -10,7 +10,7 @@ import (
 type Config struct {
 	Allow            []string
 	AllowOrigin      []string
-	AllowMethod      []string
+	AllowMethods     []string
 	AllowHeaders     []string
 	AllowCredentials bool
 	ExposeHeaders    []string
@@ -21,7 +21,7 @@ type Config struct {
 func AllowAll() *Config {
 	return &Config{
 		AllowOrigin:   []string{"*"},
-		AllowMethod:   []string{"*"},
+		AllowMethods:  []string{"*"},
 		AllowHeaders:  []string{"*"},
 		ExposeHeaders: []string{"*"},
 		MaxAge:        86400,
@@ -43,9 +43,9 @@ func (c *Config) MatchOrigin(origin string) bool {
 
 // WriteHeader write cors headers
 func (c *Config) WriteHeader(header http.Header) {
-	setHeaderValues(header, "Allow", c.AllowMethod)
+	setHeaderValues(header, "Allow", c.AllowMethods)
 	setHeaderValues(header, "Access-Control-Allow-Origin", c.AllowOrigin)
-	setHeaderValues(header, "Access-Control-Allow-Methods", c.AllowMethod)
+	setHeaderValues(header, "Access-Control-Allow-Methods", c.AllowMethods)
 	setHeaderValues(header, "Access-Control-Allow-Headers", c.AllowHeaders)
 	setHeaderValues(header, "Access-Control-Expose-Headers", c.ExposeHeaders)
 	if c.AllowCredentials {

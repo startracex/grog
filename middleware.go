@@ -46,7 +46,7 @@ func AutoOptions() HandlerFunc {
 	return func(c *HandleContext[HandlerFunc]) {
 		config := &cors.Config{
 			AllowOrigin:  []string{c.request.Header.Get("Origin")},
-			AllowMethod:  c.allowMethods,
+			AllowMethods: c.allowMethods,
 			AllowHeaders: []string{"*"},
 			MaxAge:       86400,
 		}
