@@ -89,10 +89,10 @@ func (group *RoutesGroup[T]) ANY(pattern string, handlers ...T) {
 
 // NoRoute accept not handlers for not found route
 func (group *RoutesGroup[T]) NoRoute(handlers ...T) {
-	group.Engine.NoRouteHandler = handlers
+	group.Engine.noRoute = handlers
 }
 
 // NoMethod accept not handlers for not found method
 func (group *RoutesGroup[T]) NoMethod(handlers ...T) {
-	group.Engine.NoMethodHandler = handlers
+	group.Engine.noMethod = handlers
 }

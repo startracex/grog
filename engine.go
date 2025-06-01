@@ -13,13 +13,13 @@ var Host = "127.0.0.1"
 
 type Engine[T any] struct {
 	*RoutesGroup[T]
-	Routes          *Routes[T]
-	groups          []*RoutesGroup[T]
-	Pool            sync.Pool
-	NoRouteHandler  []T
-	NoMethodHandler []T
-	DNS             *dns.DNS[*Engine[T]]
-	Adapter         func(T) func(Context)
+	Routes   *Routes[T]
+	groups   []*RoutesGroup[T]
+	Pool     sync.Pool
+	noRoute  []T
+	noMethod []T
+	DNS      *dns.DNS[*Engine[T]]
+	Adapter  func(T) func(Context)
 }
 
 // ServeHTTP for http.ListenAndServe
@@ -43,7 +43,7 @@ func (e *Engine[T]) ServeHTTP(res http.ResponseWriter, req *http.Request) {
 		pattern = node.Pattern
 		handler, ok := node.Value[req.Method]
 		if !ok {
-			hf = e.NoMethodHandler
+			hf = e.noMethod
 		} else {
 			allowMethods = make([]string, len(node.Value))
 			for k := range node.Value {
@@ -57,7 +57,7 @@ func (e *Engine[T]) ServeHTTP(res http.ResponseWriter, req *http.Request) {
 			hf = append(hf, handler...)
 		}
 	} else {
-		hf = e.NoMethodHandler
+		hf = e.noMethod
 	}
 
 	c := &HandleContext[T]{
@@ -87,10 +87,20 @@ func New[T any]() *Engine[T] {
 	return engine
 }
 
+func (e *Engine[T]) NoMethod(handlers ...T) []T {
+	e.noMethod = append(e.noMethod, handlers...)
+	return e.noMethod
+}
+
+func (e *Engine[T]) NoRoute(handlers ...T) []T {
+	e.noRoute = append(e.noRoute, handlers...)
+	return e.noRoute
+}
+
 func (e *Engine[T]) Domain(domains ...string) *Engine[T] {
 	newEngine := New[T]()
-	newEngine.NoMethodHandler = e.NoMethodHandler
-	newEngine.NoRouteHandler = e.NoRouteHandler
+	newEngine.noMethod = e.noMethod
+	newEngine.noRoute = e.noRoute
 	newEngine.Use(e.Middlewares...)
 
 	if e.DNS == nil {
