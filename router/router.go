@@ -114,8 +114,8 @@ func Dynamic(key string) DynamicType {
 			if a == '*' {
 				return DynamicType{key[1:], MatchMulti}
 			}
-			if strings.HasPrefix(key, "...") {
-				return DynamicType{key[3:], MatchMulti}
+			if strings.HasPrefix(key, "...") || strings.HasSuffix(key, "...") {
+				return DynamicType{strings.TrimPrefix(strings.TrimSuffix(key, "..."), "..."), MatchMulti}
 			}
 		}
 	}
