@@ -77,6 +77,7 @@ func New[T any]() *Engine[T] {
 	}
 	engine.RoutesGroup = &RoutesGroup[T]{Engine: engine}
 	engine.groups = []*RoutesGroup[T]{engine.RoutesGroup}
+	engine.Adapter = defaultAdapter
 	return engine
 }
 
