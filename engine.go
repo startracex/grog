@@ -1,10 +1,8 @@
 package grog
 
 import (
-	"bytes"
 	"net/http"
 	"strings"
-	"sync"
 
 	"github.com/startracex/grog/dns"
 )
@@ -15,7 +13,6 @@ type Engine[T any] struct {
 	*RoutesGroup[T]
 	Routes   *Routes[T]
 	groups   []*RoutesGroup[T]
-	Pool     sync.Pool
 	noRoute  []T
 	noMethod []T
 	DNS      *dns.DNS[*Engine[T]]
@@ -76,11 +73,6 @@ func (e *Engine[T]) ServeHTTP(res http.ResponseWriter, req *http.Request) {
 func New[T any]() *Engine[T] {
 	engine := &Engine[T]{
 		Routes: NewRouter[T](),
-		Pool: sync.Pool{
-			New: func() any {
-				return bytes.NewBuffer(make([]byte, 4096))
-			},
-		},
 	}
 	engine.RoutesGroup = &RoutesGroup[T]{Engine: engine}
 	engine.groups = []*RoutesGroup[T]{engine.RoutesGroup}
@@ -111,11 +103,6 @@ func (e *Engine[T]) Domain(domains ...string) *Engine[T] {
 		e.DNS.Insert(domain, newEngine)
 	}
 	return newEngine
-}
-
-// PoolNew Replace the default NEW func
-func (e *Engine[T]) PoolNew(f func() any) {
-	e.Pool.New = f
 }
 
 func normalizeAddr(addr string) string {
