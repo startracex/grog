@@ -17,22 +17,25 @@ import (
 ### Start a server
 
 ```go
-// Declare a engine
+// Declare a engine with handlers type.
 engine := grog.New[http.HandlerFunc]()
 
-// Custom your adapter
+// Custom your adapter, for http.HandlerFunc and grog.HandlerFunc,
+// this step can be omitted, the default converter will be used.
 engine.Adapter = func(hf http.HandlerFunc) func(grog.Context) {
   return func(c grog.Context) {
     hf(c.Writer(), c.Request())
   }
 }
 
-// Write handlers
+// Write handlers, the first parameter is pattern,
+// and the remaining parameters are handlers,
+// the type of handler is generic when the engine is created.
 engine.GET("/", func(w http.ResponseWriter, r *http.Request) {
   w.Write([]byte("Hello, World!"))
 })
 
-// Start server
+// Start server.
 engine.Run("9000")
 ```
 
