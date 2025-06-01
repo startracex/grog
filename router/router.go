@@ -145,7 +145,6 @@ func ParseParams(path string, pattern string) map[string]string {
 	return params
 }
 
-// SplitSlash split slash rune
 func SplitSlash(s string) []string {
 	vs := strings.Split(s, "/")
 	var parts []string

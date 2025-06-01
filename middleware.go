@@ -15,7 +15,7 @@ type HandlerFunc = func(Context)
 
 var DefaultMiddlewares = []HandlerFunc{Logger(), Recovery(), AutoOptions()}
 
-// Logger record the request path, method
+// Logger record the request path, method, time span.
 func Logger() HandlerFunc {
 	return func(c Context) {
 		t := time.Now()
@@ -26,7 +26,6 @@ func Logger() HandlerFunc {
 
 var ErrRecovery = fmt.Errorf("%s", http.StatusText(500))
 
-// Recovery error returns 500
 func Recovery() HandlerFunc {
 	return func(c Context) {
 		defer func() {
@@ -41,7 +40,7 @@ func Recovery() HandlerFunc {
 	}
 }
 
-// AutoOptions handle OPTIONS request, allow methods which have been registered
+// AutoOptions handle OPTIONS request, allow methods which have been registered.
 func AutoOptions() HandlerFunc {
 	return func(c Context) {
 		config := &cors.Config{

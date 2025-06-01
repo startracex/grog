@@ -6,7 +6,7 @@ import (
 	"time"
 )
 
-// ServeFile is similar to http.ServeFile, but it won't redirect
+// ServeFile is similar to http.ServeFile, but it won't redirect.
 func ServeFile(c Context, filePath string) {
 	f, err := os.Open(filePath)
 	if err != nil {
@@ -20,7 +20,7 @@ func ServeFile(c Context, filePath string) {
 	ServeContent(c, fi.Name(), fi.ModTime(), f)
 }
 
-// ServeContent serve file content
+// ServeContent serve file content.
 func ServeContent(c Context, name string, modtime time.Time, f *os.File) {
 	http.ServeContent(c.Writer(), c.Request(), name, modtime, f)
 }

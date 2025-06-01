@@ -6,7 +6,6 @@ import (
 	"strings"
 )
 
-// Config config
 type Config struct {
 	Allow            []string
 	AllowOrigin      []string
@@ -17,7 +16,6 @@ type Config struct {
 	MaxAge           int64
 }
 
-// AllowAll allow all
 func AllowAll() *Config {
 	return &Config{
 		AllowOrigin:   []string{"*"},
@@ -41,7 +39,6 @@ func (c *Config) MatchOrigin(origin string) bool {
 	return false
 }
 
-// WriteHeader write cors headers
 func (c *Config) WriteHeader(header http.Header) {
 	setHeaderValues(header, "Allow", c.AllowMethods)
 	setHeaderValues(header, "Access-Control-Allow-Origin", c.AllowOrigin)
