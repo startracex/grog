@@ -1,6 +1,7 @@
 package grog
 
 import (
+	"fmt"
 	"net/http"
 	"strings"
 
@@ -105,29 +106,26 @@ func (e *Engine[T]) Domain(domains ...string) *Engine[T] {
 	return newEngine
 }
 
-func normalizeAddr(addr string) string {
-	if !strings.HasPrefix(addr, ":") {
-		return ":" + addr
-	}
-	return addr
-}
-
-// ListenAndServe start a server
-func (e *Engine[T]) ListenAndServe(addr string) error {
-	return http.ListenAndServe(normalizeAddr(addr), e)
+func normalizeAddr(addr any) string {
+	return ":" + strings.Trim(fmt.Sprintf("%v", addr), ":")
 }
 
 // Run call ListenAndServe
-func (e *Engine[T]) Run(addr string) error {
+func (e *Engine[T]) Run(addr any) error {
 	return e.ListenAndServe(addr)
 }
 
 // RunTLS call ListenAndServeTLS
-func (e *Engine[T]) RunTLS(addr, cert, key string) error {
+func (e *Engine[T]) RunTLS(addr any, cert, key string) error {
 	return e.ListenAndServeTLS(addr, cert, key)
 }
 
+// ListenAndServe start a server
+func (e *Engine[T]) ListenAndServe(addr any) error {
+	return http.ListenAndServe(normalizeAddr(addr), e)
+}
+
 // ListenAndServeTLS start a server with TLS
-func (e *Engine[T]) ListenAndServeTLS(addr, cert, key string) error {
+func (e *Engine[T]) ListenAndServeTLS(addr any, cert, key string) error {
 	return http.ListenAndServeTLS(normalizeAddr(addr), cert, key, e)
 }
