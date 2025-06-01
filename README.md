@@ -1,6 +1,6 @@
 # grog
 
-grog is a zero dependency web framework.
+Grog is a minimalist web framework with domain/route grouping and pluggable handler adapters.
 
 ## Import
 
