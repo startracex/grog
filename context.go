@@ -20,23 +20,23 @@ type Context interface {
 }
 
 type HandleContext[T any] struct {
-	request        *http.Request
-	writer         http.ResponseWriter
-	path           string
-	method         string
-	pattern        string
-	params         map[string]string
-	index          int
-	HandlerAdapter func(T) func(Context)
-	handlers       []T
-	allowMethods   []string
+	request      *http.Request
+	writer       http.ResponseWriter
+	path         string
+	method       string
+	pattern      string
+	params       map[string]string
+	index        int
+	adapter      func(T) func(Context)
+	handlers     []T
+	allowMethods []string
 }
 
 // Next call the next handler
 func (c *HandleContext[T]) Next() {
 	c.index++
 	for ; c.index < len(c.handlers); c.index++ {
-		fn := c.HandlerAdapter(c.handlers[c.index])
+		fn := c.adapter(c.handlers[c.index])
 		if fn != nil {
 			fn(c)
 		}

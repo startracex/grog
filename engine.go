@@ -59,13 +59,13 @@ func (e *Engine[T]) ServeHTTP(res http.ResponseWriter, req *http.Request) {
 	}
 
 	c := &HandleContext[T]{
-		request:        req,
-		writer:         res,
-		HandlerAdapter: e.Adapter,
-		handlers:       hf,
-		index:          -1,
-		pattern:        pattern,
-		allowMethods:   allowMethods,
+		request:      req,
+		writer:       res,
+		adapter:      e.Adapter,
+		handlers:     hf,
+		index:        -1,
+		pattern:      pattern,
+		allowMethods: allowMethods,
 	}
 	c.Next()
 }
