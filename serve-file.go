@@ -1,6 +1,7 @@
 package grog
 
 import (
+	"io"
 	"net/http"
 	"os"
 	"time"
@@ -21,6 +22,6 @@ func ServeFile(c Context, filePath string) {
 }
 
 // ServeContent serve file content.
-func ServeContent(c Context, name string, modtime time.Time, f *os.File) {
+func ServeContent(c Context, name string, modtime time.Time, f io.ReadSeeker) {
 	http.ServeContent(c.Writer(), c.Request(), name, modtime, f)
 }
