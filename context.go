@@ -12,12 +12,18 @@ type Context interface {
 	Next()
 	Abort()
 	Reset()
+	Pattern() string
+	Path() string
+	Params() map[string]string
+	Method() string
+	AllowMethods() []string
 }
 
 type HandleContext[T any] struct {
 	request        *http.Request
 	writer         http.ResponseWriter
 	path           string
+	method         string
 	pattern        string
 	params         map[string]string
 	index          int
@@ -55,21 +61,25 @@ func (c *HandleContext[T]) Writer() http.ResponseWriter {
 	return c.writer
 }
 
-func (c *HandleContext[T]) Params() map[string]string {
-	if c.params == nil {
-		c.params = router.ParseParams(c.pattern, c.Path())
-	}
-	return c.params
-}
-
 func (c *HandleContext[T]) Pattern() string {
 	return c.pattern
 }
 
-func (c *HandleContext[T]) AllowMethods() []string {
-	return c.allowMethods
-}
-
 func (c *HandleContext[T]) Path() string {
 	return c.path
+}
+
+func (c *HandleContext[T]) Params() map[string]string {
+	if c.params == nil {
+		c.params = router.ParseParams(c.Pattern(), c.Path())
+	}
+	return c.params
+}
+
+func (c *HandleContext[T]) Method() string {
+	return c.method
+}
+
+func (c *HandleContext[T]) AllowMethods() []string {
+	return c.allowMethods
 }
