@@ -7,7 +7,7 @@ import (
 )
 
 // ServeFile is similar to http.ServeFile, but it won't redirect
-func ServeFile(c *Context, filePath string) {
+func ServeFile(c *HandleContext[any], filePath string) {
 	f, err := os.Open(filePath)
 	if err != nil {
 		return
@@ -21,6 +21,6 @@ func ServeFile(c *Context, filePath string) {
 }
 
 // ServeContent serve file content
-func ServeContent(c *Context, name string, modtime time.Time, f *os.File) {
-	http.ServeContent(c.Writer, c.Request, name, modtime, f)
+func ServeContent(c *HandleContext[any], name string, modtime time.Time, f *os.File) {
+	http.ServeContent(c.writer, c.request, name, modtime, f)
 }

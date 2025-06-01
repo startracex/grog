@@ -6,17 +6,17 @@ import (
 	"github.com/startracex/grog/router"
 )
 
-type Routes struct {
-	Root *router.Router[map[string][]HandlerFunc]
+type Routes[T any] struct {
+	Root *router.Router[map[string][]T]
 }
 
-func NewRouter() *Routes {
-	return &Routes{
-		Root: router.NewRouter[map[string][]HandlerFunc](),
+func NewRouter[T any]() *Routes[T] {
+	return &Routes[T]{
+		Root: router.NewRouter[map[string][]T](),
 	}
 }
 
-func (r *Routes) AddRoute(method string, pattern string, handlers []HandlerFunc) {
+func (r *Routes[T]) AddRoute(method string, pattern string, handlers []T) {
 	node := r.Search(pattern)
 	if node != nil {
 		m := node.Value
@@ -27,7 +27,7 @@ func (r *Routes) AddRoute(method string, pattern string, handlers []HandlerFunc)
 		}
 		return
 	}
-	r.Root.Insert(pattern, router.SplitSlash(pattern), 0, map[string][]HandlerFunc{
+	r.Root.Insert(pattern, router.SplitSlash(pattern), 0, map[string][]T{
 		method: handlers,
 	})
 }
@@ -35,12 +35,12 @@ func (r *Routes) AddRoute(method string, pattern string, handlers []HandlerFunc)
 var ErrNoRoute = errors.New("grog: no route")
 var ErrNoMethod = errors.New("grog: no method")
 
-func (r *Routes) Search(path string) *router.Router[map[string][]HandlerFunc] {
+func (r *Routes[T]) Search(path string) *router.Router[map[string][]T] {
 	parts := router.SplitSlash(path)
 	return r.Root.Search(parts, 0)
 }
 
-func (r *Routes) AllMethods(pattern string) []string {
+func (r *Routes[T]) AllMethods(pattern string) []string {
 	node := r.Search(pattern)
 	if node != nil {
 		s := make([]string, len(node.Value))

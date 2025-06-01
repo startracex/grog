@@ -2,7 +2,6 @@ package grog
 
 import (
 	"bytes"
-	"html/template"
 	"net/http"
 	"strings"
 	"sync"
@@ -13,19 +12,19 @@ import (
 
 var Host = "127.0.0.1"
 
-type Engine struct {
-	*RoutesGroup
-	Routes          *Routes
-	groups          []*RoutesGroup
+type Engine[T any] struct {
+	*RoutesGroup[T]
+	Routes          *Routes[T]
+	groups          []*RoutesGroup[T]
 	Pool            sync.Pool
-	Template        *template.Template
-	NoRouteHandler  []HandlerFunc
-	NoMethodHandler []HandlerFunc
-	DNS             *dns.DNS[*Engine]
+	NoRouteHandler  []T
+	NoMethodHandler []T
+	DNS             *dns.DNS[*Engine[T]]
+	Adapter         func(T) func(Context)
 }
 
 // ServeHTTP for http.ListenAndServe
-func (e *Engine) ServeHTTP(res http.ResponseWriter, req *http.Request) {
+func (e *Engine[T]) ServeHTTP(res http.ResponseWriter, req *http.Request) {
 	if e.DNS != nil {
 		domain := dns.GetDomain(req.Host)
 		matchEngine, ok := e.DNS.Match(domain)
@@ -39,7 +38,7 @@ func (e *Engine) ServeHTTP(res http.ResponseWriter, req *http.Request) {
 	var pattern string
 	var params map[string]string
 	var methods []string
-	hf := make([]HandlerFunc, 0)
+	hf := make([]T, 0)
 
 	node := e.Routes.Search(path)
 	if node != nil {
@@ -64,42 +63,42 @@ func (e *Engine) ServeHTTP(res http.ResponseWriter, req *http.Request) {
 		hf = e.NoMethodHandler
 	}
 
-	c := &Context{
-		Request:  req,
-		Writer:   res,
-		Engine:   e,
-		Handlers: hf,
-		Index:    -1,
-		Pattern:  pattern,
-		Params:   params,
-		Methods:  methods,
+	c := &HandleContext[T]{
+		request:        req,
+		writer:         res,
+		HandlerAdapter: e.Adapter,
+		Handlers:       hf,
+		Index:          -1,
+		Pattern:        pattern,
+		Params:         params,
+		Methods:        methods,
 	}
 	c.Next()
 }
 
 // New create engine
-func New() *Engine {
-	engine := &Engine{
-		Routes: NewRouter(),
+func New[T any]() *Engine[T] {
+	engine := &Engine[T]{
+		Routes: NewRouter[T](),
 		Pool: sync.Pool{
 			New: func() any {
 				return bytes.NewBuffer(make([]byte, 4096))
 			},
 		},
 	}
-	engine.RoutesGroup = &RoutesGroup{Engine: engine}
-	engine.groups = []*RoutesGroup{engine.RoutesGroup}
+	engine.RoutesGroup = &RoutesGroup[T]{Engine: engine}
+	engine.groups = []*RoutesGroup[T]{engine.RoutesGroup}
 	return engine
 }
 
-func (e *Engine) Domain(domains ...string) *Engine {
-	newEngine := New()
+func (e *Engine[T]) Domain(domains ...string) *Engine[T] {
+	newEngine := New[T]()
 	newEngine.NoMethodHandler = e.NoMethodHandler
 	newEngine.NoRouteHandler = e.NoRouteHandler
 	newEngine.Use(e.Middlewares...)
 
 	if e.DNS == nil {
-		e.DNS = dns.NewDNS[*Engine]()
+		e.DNS = dns.NewDNS[*Engine[T]]()
 	}
 
 	for _, domain := range domains {
@@ -109,16 +108,8 @@ func (e *Engine) Domain(domains ...string) *Engine {
 }
 
 // PoolNew Replace the default NEW func
-func (e *Engine) PoolNew(f func() any) {
+func (e *Engine[T]) PoolNew(f func() any) {
 	e.Pool.New = f
-}
-
-// ParseTemplateFiles load the path file
-func (e *Engine) ParseTemplateFiles(funcMap template.FuncMap, path ...string) {
-	if len(path) == 0 {
-		return
-	}
-	e.Template = template.Must(template.New("").Funcs(funcMap).ParseFiles(path...))
 }
 
 func normalizeAddr(addr string) string {
@@ -129,21 +120,21 @@ func normalizeAddr(addr string) string {
 }
 
 // ListenAndServe start a server
-func (e *Engine) ListenAndServe(addr string) error {
+func (e *Engine[T]) ListenAndServe(addr string) error {
 	return http.ListenAndServe(normalizeAddr(addr), e)
 }
 
 // Run call ListenAndServe
-func (e *Engine) Run(addr string) error {
+func (e *Engine[T]) Run(addr string) error {
 	return e.ListenAndServe(addr)
 }
 
 // RunTLS call ListenAndServeTLS
-func (e *Engine) RunTLS(addr, cert, key string) error {
+func (e *Engine[T]) RunTLS(addr, cert, key string) error {
 	return e.ListenAndServeTLS(addr, cert, key)
 }
 
 // ListenAndServeTLS start a server with TLS
-func (e *Engine) ListenAndServeTLS(addr, cert, key string) error {
+func (e *Engine[T]) ListenAndServeTLS(addr, cert, key string) error {
 	return http.ListenAndServeTLS(normalizeAddr(addr), cert, key, e)
 }

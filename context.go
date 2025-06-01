@@ -4,33 +4,50 @@ import (
 	"net/http"
 )
 
-type HandlerFunc func(*Context)
+type Context interface {
+	Writer() http.ResponseWriter
+	Request() *http.Request
+	Next()
+	Abort()
+	Reset()
+}
 
-type Context struct {
-	Request  *http.Request
-	Writer   http.ResponseWriter
-	Pattern  string
-	Params   map[string]string
-	Index    int
-	Engine   *Engine
-	Handlers []HandlerFunc
-	Methods  []string
+type HandleContext[T any] struct {
+	request        *http.Request
+	writer         http.ResponseWriter
+	Pattern        string
+	Params         map[string]string
+	Index          int
+	HandlerAdapter func(T) func(Context)
+	Handlers       []T
+	Methods        []string
 }
 
 // Next call the next handler
-func (c *Context) Next() {
+func (c *HandleContext[T]) Next() {
 	c.Index++
 	for ; c.Index < len(c.Handlers); c.Index++ {
-		c.Handlers[c.Index](c)
+		fn := c.HandlerAdapter(c.Handlers[c.Index])
+		if fn != nil {
+			fn(c)
+		}
 	}
 }
 
 // Abort handlers
-func (c *Context) Abort() {
+func (c *HandleContext[T]) Abort() {
 	c.Index = len(c.Handlers)
 }
 
 // Reset handlers
-func (c *Context) Reset() {
+func (c *HandleContext[T]) Reset() {
 	c.Index = -1
+}
+
+func (c *HandleContext[T]) Request() *http.Request {
+	return c.request
+}
+
+func (c *HandleContext[T]) Writer() http.ResponseWriter {
+	return c.writer
 }
