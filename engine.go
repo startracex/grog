@@ -37,7 +37,7 @@ func (e *Engine[T]) ServeHTTP(res http.ResponseWriter, req *http.Request) {
 	path := req.URL.Path
 	var pattern string
 	var allowMethods []string
-	hf := make([]T, 0)
+	var hf []T
 
 	node := e.Routes.Search(path)
 	if node != nil {
