@@ -22,8 +22,6 @@ type Context interface {
 type HandleContext[T any] struct {
 	request      *http.Request
 	writer       http.ResponseWriter
-	path         string
-	method       string
 	pattern      string
 	params       map[string]string
 	index        int
@@ -66,7 +64,7 @@ func (c *HandleContext[T]) Pattern() string {
 }
 
 func (c *HandleContext[T]) Path() string {
-	return c.path
+	return c.Request().URL.Path
 }
 
 func (c *HandleContext[T]) Params() map[string]string {
@@ -77,7 +75,7 @@ func (c *HandleContext[T]) Params() map[string]string {
 }
 
 func (c *HandleContext[T]) Method() string {
-	return c.method
+	return c.Request().Method
 }
 
 func (c *HandleContext[T]) AllowMethods() []string {
