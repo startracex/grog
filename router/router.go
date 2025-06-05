@@ -12,9 +12,7 @@ const (
 )
 
 func NewRouter[T any]() *Router[T] {
-	return &Router[T]{
-		children: make([]*Router[T], 0),
-	}
+	return &Router[T]{}
 }
 
 type Router[T any] struct {
@@ -73,7 +71,7 @@ func (rt *Router[T]) findStrict(part string) *Router[T] {
 }
 
 func (rt *Router[T]) filterWild(part string) []*Router[T] {
-	nodes := make([]*Router[T], 0)
+	var nodes []*Router[T]
 	for _, child := range rt.children {
 		if child.Part == part || child.Match > 0 {
 			nodes = append(nodes, child)
