@@ -17,7 +17,7 @@ type Context interface {
 	AllowMethods() []string
 }
 
-type HandleContext[T any] struct {
+type handleContext[T any] struct {
 	request      *http.Request
 	writer       http.ResponseWriter
 	pattern      string
@@ -29,7 +29,7 @@ type HandleContext[T any] struct {
 }
 
 // Next call the next handler
-func (c *HandleContext[T]) Next() {
+func (c *handleContext[T]) Next() {
 	c.index++
 	for ; c.index < len(c.handlers); c.index++ {
 		fn := c.adapter(c.handlers[c.index])
@@ -40,39 +40,39 @@ func (c *HandleContext[T]) Next() {
 }
 
 // Abort handlers
-func (c *HandleContext[T]) Abort() {
+func (c *handleContext[T]) Abort() {
 	c.index = len(c.handlers)
 }
 
 // Reset handlers
-func (c *HandleContext[T]) Reset() {
+func (c *handleContext[T]) Reset() {
 	c.index = -1
 }
 
-func (c *HandleContext[T]) Request() *http.Request {
+func (c *handleContext[T]) Request() *http.Request {
 	return c.request
 }
 
-func (c *HandleContext[T]) Writer() http.ResponseWriter {
+func (c *handleContext[T]) Writer() http.ResponseWriter {
 	return c.writer
 }
 
-func (c *HandleContext[T]) Pattern() string {
+func (c *handleContext[T]) Pattern() string {
 	return c.pattern
 }
 
-func (c *HandleContext[T]) Path() string {
+func (c *handleContext[T]) Path() string {
 	return c.Request().URL.Path
 }
 
-func (c *HandleContext[T]) Params() map[string]string {
+func (c *handleContext[T]) Params() map[string]string {
 	return c.params
 }
 
-func (c *HandleContext[T]) Method() string {
+func (c *handleContext[T]) Method() string {
 	return c.Request().Method
 }
 
-func (c *HandleContext[T]) AllowMethods() []string {
+func (c *handleContext[T]) AllowMethods() []string {
 	return c.allowMethods
 }

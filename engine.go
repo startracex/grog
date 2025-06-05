@@ -61,11 +61,11 @@ func (e *Engine[T]) ServeHTTP(res http.ResponseWriter, req *http.Request) {
 		hf = e.noMethod
 	}
 
-	var c *HandleContext[T]
+	var c *handleContext[T]
 	if v := e.ContextPool.Get(); v != nil {
-		c = v.(*HandleContext[T])
+		c = v.(*handleContext[T])
 	} else {
-		c = &HandleContext[T]{}
+		c = &handleContext[T]{}
 	}
 	c.request = req
 	c.writer = res
@@ -93,7 +93,7 @@ func New[T any]() *Engine[T] {
 		Routes: NewRouter[T](),
 		ContextPool: sync.Pool{
 			New: func() any {
-				return new(HandleContext[T])
+				return new(handleContext[T])
 			},
 		},
 	}
