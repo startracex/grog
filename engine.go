@@ -4,20 +4,23 @@ import (
 	"fmt"
 	"net/http"
 	"strings"
+	"sync"
 
 	"github.com/startracex/grog/dns"
+	"github.com/startracex/grog/router"
 )
 
 var Host = "127.0.0.1"
 
 type Engine[T any] struct {
 	*RoutesGroup[T]
-	Routes   *Routes[T]
-	groups   []*RoutesGroup[T]
-	noRoute  []T
-	noMethod []T
-	DNS      *dns.DNS[*Engine[T]]
-	Adapter  func(T) func(Context)
+	Routes      *Routes[T]
+	groups      []*RoutesGroup[T]
+	noRoute     []T
+	noMethod    []T
+	DNS         *dns.DNS[*Engine[T]]
+	Adapter     func(T) func(Context)
+	ContextPool sync.Pool
 }
 
 // ServeHTTP for http.ListenAndServe
@@ -58,22 +61,41 @@ func (e *Engine[T]) ServeHTTP(res http.ResponseWriter, req *http.Request) {
 		hf = e.noMethod
 	}
 
-	c := &HandleContext[T]{
-		request:      req,
-		writer:       res,
-		adapter:      e.Adapter,
-		handlers:     hf,
-		index:        -1,
-		pattern:      pattern,
-		allowMethods: allowMethods,
+	var c *HandleContext[T]
+	if v := e.ContextPool.Get(); v != nil {
+		c = v.(*HandleContext[T])
+	} else {
+		c = &HandleContext[T]{}
 	}
+	c.request = req
+	c.writer = res
+	c.pattern = pattern
+	c.allowMethods = allowMethods
+	c.handlers = hf
+	c.index = -1
+	c.adapter = e.Adapter
+	c.params = router.ParseParams(path, pattern)
+
 	c.Next()
+
+	c.request = nil
+	c.writer = nil
+	c.pattern = ""
+	c.index = -1
+	c.handlers = nil
+	c.allowMethods = nil
+	e.ContextPool.Put(c)
 }
 
 // New create engine
 func New[T any]() *Engine[T] {
 	engine := &Engine[T]{
 		Routes: NewRouter[T](),
+		ContextPool: sync.Pool{
+			New: func() any {
+				return new(HandleContext[T])
+			},
+		},
 	}
 	engine.RoutesGroup = &RoutesGroup[T]{Engine: engine}
 	engine.groups = []*RoutesGroup[T]{engine.RoutesGroup}

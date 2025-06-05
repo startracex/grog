@@ -2,8 +2,6 @@ package grog
 
 import (
 	"net/http"
-
-	"github.com/startracex/grog/router"
 )
 
 type Context interface {
@@ -68,9 +66,6 @@ func (c *HandleContext[T]) Path() string {
 }
 
 func (c *HandleContext[T]) Params() map[string]string {
-	if c.params == nil {
-		c.params = router.ParseParams(c.Pattern(), c.Path())
-	}
 	return c.params
 }
 
