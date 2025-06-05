@@ -134,6 +134,10 @@ func ParseParams(path string, pattern string) map[string]string {
 	patternSplit := SplitSlash(pattern)
 	params := make(map[string]string)
 	for i := range patternSplit {
+		if i >= len(pathSplit) {
+			break
+		}
+
 		info := Dynamic(patternSplit[i])
 		if info.matchType == MatchSingle {
 			params[info.key] = pathSplit[i]
@@ -146,12 +150,20 @@ func ParseParams(path string, pattern string) map[string]string {
 }
 
 func SplitSlash(s string) []string {
-	vs := strings.Split(s, "/")
 	var parts []string
-	for _, item := range vs {
-		if item != "" {
-			parts = append(parts, item)
+
+	start := 0
+	for i := range len(s) {
+		if s[i] == '/' {
+			if start < i {
+				parts = append(parts, s[start:i])
+			}
+			start = i + 1
 		}
 	}
+	if start < len(s) {
+		parts = append(parts, s[start:])
+	}
+
 	return parts
 }
