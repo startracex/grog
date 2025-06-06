@@ -25,7 +25,7 @@ func NewRouter[T any]() *Router[T] {
 
 func (r *Router[T]) Insert(pattern string, value T) {
 	r.insert(pattern, pattern, value)
-	r.sortChildren()
+	r.Sort()
 }
 
 func (r *Router[T]) Search(path string) *Router[T] {
@@ -88,13 +88,13 @@ func (r *Router[T]) findChild(part string) *Router[T] {
 	return nil
 }
 
-func (r *Router[T]) sortChildren() {
+func (r *Router[T]) Sort() {
 	sort.SliceStable(r.Children, func(i, j int) bool {
 		return r.Children[i].Match < r.Children[j].Match
 	})
 
 	for _, child := range r.Children {
-		child.sortChildren()
+		child.Sort()
 	}
 }
 
