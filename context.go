@@ -20,14 +20,13 @@ type Context interface {
 }
 
 type handleContext[T any] struct {
-	request      *http.Request
-	writer       http.ResponseWriter
-	pattern      string
-	index        int
-	adapter      func(T) func(Context)
-	handlers     []T
-	allowMethods []string
-	node         *router.Router[map[string][]T]
+	request  *http.Request
+	writer   http.ResponseWriter
+	pattern  string
+	index    int
+	adapter  func(T) func(Context)
+	handlers []T
+	node     *router.Router[map[string][]T]
 }
 
 // Next call the next handler

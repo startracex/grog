@@ -71,7 +71,6 @@ func (e *Engine[T]) ServeHTTP(res http.ResponseWriter, req *http.Request) {
 	c.pattern = ""
 	c.index = -1
 	c.handlers = c.handlers[:0]
-	c.allowMethods = nil
 	c.node = nil
 	e.ContextPool.Put(c)
 }
