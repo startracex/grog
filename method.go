@@ -76,11 +76,3 @@ func (group *RoutesGroup[T]) ALL(pattern string, handlers ...T) {
 func (group *RoutesGroup[T]) ANY(pattern string, handlers ...T) {
 	group.ALL(pattern, handlers...)
 }
-
-func (group *RoutesGroup[T]) NoRoute(handlers ...T) {
-	group.Engine.noRoute = handlers
-}
-
-func (group *RoutesGroup[T]) NoMethod(handlers ...T) {
-	group.Engine.noMethod = handlers
-}
