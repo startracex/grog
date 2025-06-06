@@ -49,7 +49,7 @@ func (e *Engine[T]) ServeHTTP(res http.ResponseWriter, req *http.Request) {
 	if node != nil {
 		c.node = node
 		c.pattern = node.Pattern
-		handler, ok := node.Value[req.Method]
+		handlers, ok := node.Value[req.Method]
 		if !ok {
 			c.handlers = e.noMethod
 		} else {
@@ -58,7 +58,7 @@ func (e *Engine[T]) ServeHTTP(res http.ResponseWriter, req *http.Request) {
 					c.handlers = append(c.handlers, group.Middlewares...)
 				}
 			}
-			c.handlers = append(c.handlers, handler...)
+			c.handlers = append(c.handlers, handlers...)
 		}
 	} else {
 		c.handlers = e.noMethod
