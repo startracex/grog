@@ -13,7 +13,7 @@ const (
 
 type Router[T any] struct {
 	Part     string
-	Match    int
+	Match    uint8
 	Pattern  string
 	Value    T
 	Children []*Router[T]
@@ -114,7 +114,7 @@ func nextPart(path string) (part, remaining string) {
 
 type DynamicType struct {
 	key       string
-	matchType int
+	matchType uint8
 }
 
 func Dynamic(key string) DynamicType {
