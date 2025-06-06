@@ -1,19 +1,20 @@
 package grog
 
 import (
+	"net/http"
 	"strings"
 )
 
 const (
-	GET     = "GET"
-	POST    = "POST"
-	PUT     = "PUT"
-	DELETE  = "DELETE"
-	PATCH   = "PATCH"
-	HEAD    = "HEAD"
-	OPTIONS = "OPTIONS"
-	TRACE   = "TRACE"
-	CONNECT = "CONNECT"
+	GET     = http.MethodGet
+	POST    = http.MethodPost
+	PUT     = http.MethodPut
+	DELETE  = http.MethodDelete
+	PATCH   = http.MethodPatch
+	HEAD    = http.MethodHead
+	OPTIONS = http.MethodOptions
+	TRACE   = http.MethodTrace
+	CONNECT = http.MethodConnect
 )
 
 var AllMethods = [...]string{GET, POST, PUT, DELETE, PATCH, OPTIONS, HEAD, CONNECT, TRACE}
