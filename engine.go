@@ -70,7 +70,7 @@ func (e *Engine[T]) ServeHTTP(res http.ResponseWriter, req *http.Request) {
 	c.writer = nil
 	c.pattern = ""
 	c.index = -1
-	c.handlers = nil
+	c.handlers = c.handlers[:0]
 	c.allowMethods = nil
 	c.node = nil
 	e.ContextPool.Put(c)
