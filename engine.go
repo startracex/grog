@@ -7,7 +7,6 @@ import (
 	"sync"
 
 	"github.com/startracex/grog/dns"
-	"github.com/startracex/grog/router"
 )
 
 var Host = "127.0.0.1"
@@ -34,47 +33,36 @@ func (e *Engine[T]) ServeHTTP(res http.ResponseWriter, req *http.Request) {
 		}
 	}
 
-	path := req.URL.Path
-	var pattern string
-	var allowMethods []string
-	var hf []T
-
-	node := e.Routes.Search(path)
-	if node != nil {
-		pattern = node.Pattern
-		handler, ok := node.Value[req.Method]
-		if !ok {
-			hf = e.noMethod
-		} else {
-			allowMethods = make([]string, len(node.Value))
-			for k := range node.Value {
-				allowMethods = append(allowMethods, k)
-			}
-			for _, group := range e.groups {
-				if strings.HasPrefix(path, group.Prefix+"/") {
-					hf = append(hf, group.Middlewares...)
-				}
-			}
-			hf = append(hf, handler...)
-		}
-	} else {
-		hf = e.noMethod
-	}
-
 	var c *handleContext[T]
 	if v := e.ContextPool.Get(); v != nil {
 		c = v.(*handleContext[T])
 	} else {
-		c = &handleContext[T]{}
+		c = new(handleContext[T])
 	}
 	c.request = req
 	c.writer = res
-	c.pattern = pattern
-	c.allowMethods = allowMethods
-	c.handlers = hf
 	c.index = -1
 	c.adapter = e.Adapter
-	c.params = router.ParseParams(path, pattern)
+	path := req.URL.Path
+
+	node := e.Routes.Search(path)
+	if node != nil {
+		c.node = node
+		c.pattern = node.Pattern
+		handler, ok := node.Value[req.Method]
+		if !ok {
+			c.handlers = e.noMethod
+		} else {
+			for _, group := range e.groups {
+				if strings.HasPrefix(c.pattern, group.Prefix+"/") {
+					c.handlers = append(c.handlers, group.Middlewares...)
+				}
+			}
+			c.handlers = append(c.handlers, handler...)
+		}
+	} else {
+		c.handlers = e.noMethod
+	}
 
 	c.Next()
 
@@ -84,6 +72,7 @@ func (e *Engine[T]) ServeHTTP(res http.ResponseWriter, req *http.Request) {
 	c.index = -1
 	c.handlers = nil
 	c.allowMethods = nil
+	c.node = nil
 	e.ContextPool.Put(c)
 }
 

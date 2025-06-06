@@ -27,17 +27,14 @@ func (r *Routes[T]) AddRoute(method string, pattern string, handlers []T) {
 		}
 		return
 	}
-	r.Root.Insert(pattern, router.SplitSlash(pattern), 0, map[string][]T{
-		method: handlers,
-	})
+	r.Root.Insert(pattern, map[string][]T{method: handlers})
 }
 
 var ErrNoRoute = errors.New("grog: no route")
 var ErrNoMethod = errors.New("grog: no method")
 
 func (r *Routes[T]) Search(path string) *router.Router[map[string][]T] {
-	parts := router.SplitSlash(path)
-	return r.Root.Search(parts, 0)
+	return r.Root.Search(path)
 }
 
 func (r *Routes[T]) AllMethods(pattern string) []string {

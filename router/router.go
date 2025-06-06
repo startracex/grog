@@ -11,58 +11,76 @@ const (
 	MatchMulti
 )
 
+type Router[T any] struct {
+	Part     string
+	Match    int
+	Pattern  string
+	Value    T
+	Children []*Router[T]
+}
+
 func NewRouter[T any]() *Router[T] {
 	return &Router[T]{}
 }
 
-type Router[T any] struct {
-	Pattern  string
-	Part     string
-	children []*Router[T]
-	Match    int
-	Value    T
+func (r *Router[T]) Insert(pattern string, value T) {
+	r.insert(pattern, pattern, value)
+	r.sortChildren()
 }
 
-func (rt *Router[T]) Insert(pattern string, parts []string, height int, value T) {
-	defer rt.Sort()
+func (r *Router[T]) Search(path string) *Router[T] {
+	return r.search(path)
+}
 
-	if len(parts) == height {
-		rt.Pattern = pattern
-		rt.Value = value
+func (r *Router[T]) insert(path, pattern string, value T) {
+	if path == "" {
+		r.Pattern = pattern
+		r.Value = value
 		return
 	}
-	part := parts[height]
-	spec := rt.findStrict(part)
-	if spec == nil {
-		spec = &Router[T]{
+
+	part, remaining := nextPart(path)
+	child := r.findChild(part)
+	if child == nil {
+		child = &Router[T]{
 			Part:  part,
 			Match: Dynamic(part).matchType,
 		}
-		rt.children = append(rt.children, spec)
+		r.Children = append(r.Children, child)
 	}
-	spec.Insert(pattern, parts, height+1, value)
+	child.insert(remaining, pattern, value)
 }
 
-func (rt *Router[T]) Search(parts []string, height int) *Router[T] {
-	if len(parts) == height || Dynamic(rt.Part).matchType == MatchMulti {
-		if rt.Pattern == "" {
-			return nil
+func (r *Router[T]) search(path string) *Router[T] {
+	if path == "" {
+		if r.Pattern != "" {
+			return r
 		}
-		return rt
+		return nil
 	}
-	part := parts[height]
-	children := rt.filterWild(part)
-	for _, child := range children {
-		result := child.Search(parts, height+1)
-		if result != nil {
-			return result
+
+	part, remaining := nextPart(path)
+	for _, child := range r.Children {
+		switch child.Match {
+		case MatchStrict:
+			if child.Part == part {
+				if result := child.search(remaining); result != nil {
+					return result
+				}
+			}
+		case MatchSingle:
+			if result := child.search(remaining); result != nil {
+				return result
+			}
+		case MatchMulti:
+			return child
 		}
 	}
 	return nil
 }
 
-func (rt *Router[T]) findStrict(part string) *Router[T] {
-	for _, child := range rt.children {
+func (r *Router[T]) findChild(part string) *Router[T] {
+	for _, child := range r.Children {
 		if child.Part == part {
 			return child
 		}
@@ -70,23 +88,28 @@ func (rt *Router[T]) findStrict(part string) *Router[T] {
 	return nil
 }
 
-func (rt *Router[T]) filterWild(part string) []*Router[T] {
-	var nodes []*Router[T]
-	for _, child := range rt.children {
-		if child.Part == part || child.Match > 0 {
-			nodes = append(nodes, child)
-		}
+func (r *Router[T]) sortChildren() {
+	sort.SliceStable(r.Children, func(i, j int) bool {
+		return r.Children[i].Match < r.Children[j].Match
+	})
+
+	for _, child := range r.Children {
+		child.sortChildren()
 	}
-	return nodes
 }
 
-func (rt *Router[T]) Sort() {
-	sort.Slice(rt.children, func(a, b int) bool {
-		return rt.children[a].Match < rt.children[b].Match
-	})
-	for _, child := range rt.children {
-		child.Sort()
+func nextPart(path string) (part, remaining string) {
+	path = strings.TrimPrefix(path, "/")
+
+	if path == "" {
+		return "", ""
 	}
+
+	idx := strings.IndexByte(path, '/')
+	if idx == -1 {
+		return path, ""
+	}
+	return path[:idx], path[idx+1:]
 }
 
 type DynamicType struct {
@@ -95,8 +118,9 @@ type DynamicType struct {
 }
 
 func Dynamic(key string) DynamicType {
-	if len(key) > 0 {
-		if affix(key, "{", "}") || affix(key, "[", "]") {
+	if len(key) > 1 {
+		first, last := key[0], key[len(key)-1]
+		if (first == '{' && last == '}') || (first == '[' && last == ']') {
 			key = key[1 : len(key)-1]
 			result := Dynamic(key)
 			if result.matchType == MatchStrict {
@@ -104,17 +128,18 @@ func Dynamic(key string) DynamicType {
 			}
 			return result
 		}
-		if len(key) > 1 {
-			a := key[0]
-			if a == ':' {
-				return DynamicType{key[1:], MatchSingle}
-			}
-			if a == '*' {
-				return DynamicType{key[1:], MatchMulti}
-			}
-			if strings.HasPrefix(key, "...") || strings.HasSuffix(key, "...") {
-				return DynamicType{strings.TrimPrefix(strings.TrimSuffix(key, "..."), "..."), MatchMulti}
-			}
+		a := key[0]
+		if a == ':' {
+			return DynamicType{key[1:], MatchSingle}
+		}
+		if a == '*' {
+			return DynamicType{key[1:], MatchMulti}
+		}
+		if strings.HasPrefix(key, "...") {
+			return DynamicType{key[3:], MatchMulti}
+		}
+		if strings.HasSuffix(key, "...") {
+			return DynamicType{key[:len(key)-3], MatchMulti}
 		}
 	}
 	return DynamicType{
@@ -123,45 +148,32 @@ func Dynamic(key string) DynamicType {
 	}
 }
 
-func affix(key, prefix, suffix string) bool {
-	return strings.HasPrefix(key, prefix) && strings.HasSuffix(key, suffix)
-}
-
-func ParseParams(path string, pattern string) map[string]string {
-	pathSplit := SplitSlash(path)
-	patternSplit := SplitSlash(pattern)
+func ParseParams(path, pattern string) map[string]string {
 	params := make(map[string]string)
-	for i := range patternSplit {
-		if i >= len(pathSplit) {
+	var pathPart, patternPart string
+
+	for {
+		pathPart, path = nextPart(path)
+		patternPart, pattern = nextPart(pattern)
+
+		if patternPart == "" {
+			break
+		}
+		if pathPart == "" {
 			break
 		}
 
-		info := Dynamic(patternSplit[i])
-		if info.matchType == MatchSingle {
-			params[info.key] = pathSplit[i]
-		} else if info.matchType == MatchMulti {
-			params[info.key] = strings.Join(pathSplit[i:], "/")
-			break
+		info := Dynamic(patternPart)
+		switch info.matchType {
+		case MatchSingle:
+			params[info.key] = pathPart
+		case MatchMulti:
+			params[info.key] = pathPart
+			if path != "" {
+				params[info.key] += "/" + path
+			}
+			return params
 		}
 	}
 	return params
-}
-
-func SplitSlash(s string) []string {
-	var parts []string
-
-	start := 0
-	for i := range len(s) {
-		if s[i] == '/' {
-			if start < i {
-				parts = append(parts, s[start:i])
-			}
-			start = i + 1
-		}
-	}
-	if start < len(s) {
-		parts = append(parts, s[start:])
-	}
-
-	return parts
 }

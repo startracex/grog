@@ -2,6 +2,8 @@ package grog
 
 import (
 	"net/http"
+
+	"github.com/startracex/grog/router"
 )
 
 type Context interface {
@@ -21,11 +23,11 @@ type handleContext[T any] struct {
 	request      *http.Request
 	writer       http.ResponseWriter
 	pattern      string
-	params       map[string]string
 	index        int
 	adapter      func(T) func(Context)
 	handlers     []T
 	allowMethods []string
+	node         *router.Router[map[string][]T]
 }
 
 // Next call the next handler
@@ -66,7 +68,7 @@ func (c *handleContext[T]) Path() string {
 }
 
 func (c *handleContext[T]) Params() map[string]string {
-	return c.params
+	return router.ParseParams(c.Path(), c.Pattern())
 }
 
 func (c *handleContext[T]) Method() string {
@@ -74,5 +76,9 @@ func (c *handleContext[T]) Method() string {
 }
 
 func (c *handleContext[T]) AllowMethods() []string {
-	return c.allowMethods
+	var allowMethods []string
+	for method := range c.node.Value {
+		allowMethods = append(allowMethods, method)
+	}
+	return allowMethods
 }
