@@ -75,7 +75,7 @@ func (c *handleContext[T]) Method() string {
 }
 
 func (c *handleContext[T]) AllowMethods() []string {
-	var allowMethods []string
+	allowMethods := make([]string, len(c.node.Value))
 	for method := range c.node.Value {
 		allowMethods = append(allowMethods, method)
 	}
