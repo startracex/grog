@@ -128,11 +128,10 @@ func Dynamic(key string) DynamicType {
 			}
 			return result
 		}
-		a := key[0]
-		if a == ':' {
+		if first == ':' {
 			return DynamicType{key[1:], MatchSingle}
 		}
-		if a == '*' {
+		if first == '*' {
 			return DynamicType{key[1:], MatchMulti}
 		}
 		if strings.HasPrefix(key, "...") {
