@@ -133,11 +133,9 @@ func ReadTypeFrame(reader *bufio.Reader) (data []byte, code int, err error) {
 	return
 }
 
-// WriteFrame write data to conn with datatype
-func WriteFrame(conn net.Conn, data []byte, datatype int) error {
-
+func WriteFrame(writer *bufio.Writer, data []byte, datatype int) error {
 	if datatype == CLOSE {
-		return conn.Close()
+		return writer.Flush()
 	}
 
 	frameLength := len(data)
@@ -146,30 +144,46 @@ func WriteFrame(conn net.Conn, data []byte, datatype int) error {
 	firstByte := byte(0x80)
 	opcode := byte(datatype)
 	firstByte |= opcode
-	err := binary.Write(conn, binary.BigEndian, &firstByte)
+	err := writer.WriteByte(firstByte)
 	if err != nil {
 		return err
 	}
 
 	// Write the second byte: payload length
-	secondByte := byte(frameLength)
-	err = binary.Write(conn, binary.BigEndian, &secondByte)
+	var secondByte byte
+	if frameLength < 126 {
+		secondByte = byte(frameLength)
+		err = writer.WriteByte(secondByte)
+	} else if frameLength <= 0xFFFF {
+		secondByte = 126
+		err = writer.WriteByte(secondByte)
+		if err == nil {
+			err = binary.Write(writer, binary.BigEndian, uint16(frameLength))
+		}
+	} else {
+		secondByte = 127
+		err = writer.WriteByte(secondByte)
+		if err == nil {
+			err = binary.Write(writer, binary.BigEndian, uint64(frameLength))
+		}
+	}
 	if err != nil {
 		return err
 	}
 
 	// Write the payload data
-	_, err = conn.Write(data)
+	_, err = writer.Write(data)
 	if err != nil {
 		return err
 	}
 
-	return nil
+	return writer.Flush()
 }
 
 // Ping sends ping to connection and waits for pong
 func Ping(conn net.Conn, bt []byte, d time.Duration) error {
-	err := WriteFrame(conn, bt, TEXT)
+	writer := bufio.NewWriter(conn)
+	err := WriteFrame(writer, bt, PING)
 	if err != nil {
 		return err
 	}
@@ -194,7 +208,8 @@ func Ping(conn net.Conn, bt []byte, d time.Duration) error {
 
 // Pone sends pong to connection
 func Pone(conn net.Conn, bt []byte) error {
-	err := WriteFrame(conn, bt, PONG)
+	writer := bufio.NewWriter(conn)
+	err := WriteFrame(writer, bt, PONG)
 	if err != nil {
 		return err
 	}
@@ -202,7 +217,8 @@ func Pone(conn net.Conn, bt []byte) error {
 }
 
 func Close(conn net.Conn, bt []byte) error {
-	err := WriteFrame(conn, bt, CLOSE)
+	writer := bufio.NewWriter(conn)
+	err := WriteFrame(writer, bt, CLOSE)
 	if err != nil {
 		return err
 	}

@@ -8,6 +8,7 @@ import (
 	"io"
 	"net"
 	"net/http"
+	"sync"
 	"time"
 )
 
@@ -32,14 +33,34 @@ func WriteAccept(w io.Writer, accept string) (int, error) {
 }
 
 type WS struct {
-	Conn   net.Conn
-	Reader *bufio.Reader
-	Closed bool
+	Conn       net.Conn
+	Writer     *bufio.Writer
+	WriterSize int
+	Reader     *bufio.Reader
+	ReaderSize int
+	Closed     bool
+	mu         sync.Mutex
 }
 
 // NewWS return empty WS
 func NewWS() *WS {
 	return &WS{}
+}
+
+func (ws *WS) checkSize() {
+	if ws.ReaderSize <= 0 {
+		ws.ReaderSize = 4096
+	}
+	if ws.WriterSize <= 0 {
+		ws.WriterSize = 4096
+	}
+}
+
+func (ws *WS) Connect(conn net.Conn) {
+	ws.checkSize()
+	ws.Conn = conn
+	ws.Reader = bufio.NewReaderSize(conn, ws.ReaderSize)
+	ws.Writer = bufio.NewWriterSize(conn, ws.WriterSize)
 }
 
 // Upgrade http connection to websocket
@@ -56,8 +77,7 @@ func (ws *WS) Upgrade(w http.ResponseWriter, r *http.Request) {
 		if err != nil {
 			return
 		}
-		ws.Conn = conn
-		ws.Reader = bufio.NewReader(conn)
+		ws.Connect(conn)
 	}
 }
 
@@ -68,15 +88,15 @@ func Upgrade(w http.ResponseWriter, r *http.Request) *WS {
 	return ws
 }
 
-// Send data to conn with datatype
+// Send data to conn with datatype using bufio.Writer
 func (ws *WS) Send(data []byte, datatype int) error {
 	if ws.Closed {
 		return ErrClosed
 	}
-	return WriteFrame(ws.Conn, data, datatype)
+	return WriteFrame(ws.Writer, data, datatype)
 }
 
-// Message wait for a message
+// Message waits for a message and handles PING automatically
 func (ws *WS) Message() ([]byte, error) {
 	data, err := ReadFrame(ws.Reader)
 	if IsClose(err) { // OPCODE 8 close / EOF close
@@ -84,13 +104,12 @@ func (ws *WS) Message() ([]byte, error) {
 		return nil, err
 	}
 	if IsPing(err) { // OPCODE 9 ping
-		err := WriteFrame(ws.Conn, data, PONG)
+		err := WriteFrame(ws.Writer, data, PONG)
 		if err != nil {
 			return nil, err
 		}
 		return data, ErrOpcode9
 	}
-
 	return data, nil
 }
 
@@ -98,10 +117,18 @@ func (ws *WS) Message() ([]byte, error) {
 func (ws *WS) Close() error {
 	if ws.Closed {
 		return ErrClosed
-	} else {
-		ws.Closed = true
-		return ws.Conn.Close()
 	}
+	ws.mu.Lock()
+	defer ws.mu.Unlock()
+	ws.Closed = true
+	err := WriteFrame(ws.Writer, nil, CLOSE)
+	if err != nil {
+		return err
+	}
+
+	ws.Closed = true
+	return ws.Conn.Close()
+
 }
 
 func (ws *WS) Ping(bt []byte, d time.Duration) error {
