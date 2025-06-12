@@ -78,7 +78,7 @@ func (e *Engine[T]) ServeHTTP(res http.ResponseWriter, req *http.Request) {
 // New create engine
 func New[T any]() *Engine[T] {
 	engine := &Engine[T]{
-		Routes: NewRouter[T](),
+		Routes: NewRoutes[T](),
 		ContextPool: sync.Pool{
 			New: func() any {
 				return new(handleContext[T])

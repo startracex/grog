@@ -10,7 +10,7 @@ type Routes[T any] struct {
 	Root *router.Router[map[string][]T]
 }
 
-func NewRouter[T any]() *Routes[T] {
+func NewRoutes[T any]() *Routes[T] {
 	return &Routes[T]{
 		Root: router.NewRouter[map[string][]T](),
 	}
