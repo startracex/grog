@@ -24,8 +24,6 @@ func defaultAdapter[T any](t T) func(Context) {
 	if v, ok := i.(http.HandlerFunc); ok {
 		return httpAdapter(v)
 	}
-	return func(ctx Context) {
-		tName := reflect.TypeOf(t).String()
-		panic(fmt.Sprintf("no supported adapter for %q", tName))
-	}
+	tName := reflect.TypeOf(t).String()
+	panic(fmt.Sprintf("no supported adapter for %q", tName))
 }
