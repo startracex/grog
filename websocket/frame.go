@@ -124,7 +124,7 @@ func ReadTypeFrame(reader *bufio.Reader) (data []byte, code int, err error) {
 	}
 
 	if masked {
-		for i := 0; i < payloadLength; i++ {
+		for i := range payloadLength {
 			payloadData[i] ^= mask[i%4]
 		}
 	}
