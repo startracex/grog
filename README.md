@@ -1,6 +1,8 @@
 # grog
 
-Grog is a minimalist web framework with domain/route grouping and pluggable handler adapters.
+Grog is a minimalist web framework with domain-based routing and pluggable handler adapters.
+
+The Grog framework well-suited for developers who want a lightweight, extensible foundation without the overhead of heavier frameworks, or for beginners looking to learn how web frameworks work.
 
 ## Import
 
