@@ -36,15 +36,3 @@ var ErrNoMethod = errors.New("grog: no method")
 func (r *Routes[T]) Search(path string) *router.Router[map[string][]T] {
 	return r.Root.Search(path)
 }
-
-func (r *Routes[T]) AllMethods(pattern string) []string {
-	node := r.Search(pattern)
-	if node != nil {
-		s := make([]string, len(node.Value))
-		for k := range node.Value {
-			s = append(s, k)
-		}
-		return s
-	}
-	return nil
-}
