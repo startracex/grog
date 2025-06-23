@@ -33,16 +33,7 @@ func (e *Engine[T]) ServeHTTP(res http.ResponseWriter, req *http.Request) {
 		}
 	}
 
-	var c *handleContext[T]
-	if v := e.ContextPool.Get(); v != nil {
-		c = v.(*handleContext[T])
-	} else {
-		c = new(handleContext[T])
-	}
-	c.request = req
-	c.writer = res
-	c.index = -1
-	c.adapter = e.Adapter
+	c := e.getContext(req, res)
 	path := req.URL.Path
 
 	node := e.Routes.Search(path)
@@ -66,6 +57,27 @@ func (e *Engine[T]) ServeHTTP(res http.ResponseWriter, req *http.Request) {
 
 	c.Next()
 
+	e.putContext(c)
+}
+
+func (e *Engine[T]) getContext(
+	req *http.Request,
+	res http.ResponseWriter,
+) *handleContext[T] {
+	var c *handleContext[T]
+	if v := e.ContextPool.Get(); v != nil {
+		c = v.(*handleContext[T])
+	} else {
+		c = new(handleContext[T])
+	}
+	c.request = req
+	c.writer = res
+	c.index = -1
+	c.adapter = e.Adapter
+	return c
+}
+
+func (e *Engine[T]) putContext(c *handleContext[T]) {
 	c.request = nil
 	c.writer = nil
 	c.pattern = ""

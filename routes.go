@@ -37,7 +37,6 @@ func (r *Routes[T]) Search(path string) *router.Router[map[string][]T] {
 	return r.Root.Search(path)
 }
 
-
 type RoutesGroup[T any] struct {
 	Prefix      string
 	Middlewares []T
