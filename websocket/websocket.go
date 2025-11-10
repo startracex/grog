@@ -63,22 +63,26 @@ func (ws *WS) Connect(conn net.Conn) {
 	ws.Writer = bufio.NewWriterSize(conn, ws.WriterSize)
 }
 
+var ErrNotUpgrade = errors.New("grog/websocket: not upgrade")
+
 // Upgrade http connection to websocket
-func (ws *WS) Upgrade(w http.ResponseWriter, r *http.Request) {
-	if IsUpgradeWebsocket(r.Header) {
-		key := GetKey(r.Header)
-		accept := SumAccept(key)
-		hijack := w.(http.Hijacker)
-		conn, _, err := hijack.Hijack()
-		if err != nil {
-			return
-		}
-		_, err = WriteAccept(conn, accept)
-		if err != nil {
-			return
-		}
-		ws.Connect(conn)
+func (ws *WS) Upgrade(w http.ResponseWriter, r *http.Request) error {
+	if !IsUpgradeWebsocket(r.Header) {
+		return ErrNotUpgrade
 	}
+	key := GetKey(r.Header)
+	accept := SumAccept(key)
+	hijack := w.(http.Hijacker)
+	conn, _, err := hijack.Hijack()
+	if err != nil {
+		return err
+	}
+	_, err = WriteAccept(conn, accept)
+	if err != nil {
+		return err
+	}
+	ws.Connect(conn)
+	return nil
 }
 
 // Upgrade converse to websocket instance
