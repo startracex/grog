@@ -13,8 +13,6 @@ import (
 
 type HandlerFunc = func(Context)
 
-var DefaultMiddlewares = []HandlerFunc{Logger(), Recovery(), AutoOptions()}
-
 // Logger record the request path, method, time span.
 func Logger() HandlerFunc {
 	return func(c Context) {
