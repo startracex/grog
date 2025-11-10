@@ -28,10 +28,6 @@ func (r *Router[T]) Insert(pattern string, value T) {
 	r.Sort()
 }
 
-func (r *Router[T]) Search(path string) *Router[T] {
-	return r.search(path)
-}
-
 func (r *Router[T]) insert(path, pattern string, value T) {
 	if path == "" {
 		r.Pattern = pattern
@@ -51,7 +47,7 @@ func (r *Router[T]) insert(path, pattern string, value T) {
 	child.insert(remaining, pattern, value)
 }
 
-func (r *Router[T]) search(path string) *Router[T] {
+func (r *Router[T]) Search(path string) *Router[T] {
 	if path == "" {
 		if r.Pattern != "" {
 			return r
@@ -64,12 +60,12 @@ func (r *Router[T]) search(path string) *Router[T] {
 		switch child.Match {
 		case MatchStrict:
 			if child.Part == part {
-				if result := child.search(remaining); result != nil {
+				if result := child.Search(remaining); result != nil {
 					return result
 				}
 			}
 		case MatchSingle:
-			if result := child.search(remaining); result != nil {
+			if result := child.Search(remaining); result != nil {
 				return result
 			}
 		case MatchMulti:
