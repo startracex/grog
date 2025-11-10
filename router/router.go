@@ -19,7 +19,7 @@ type Router[T any] struct {
 	Children []*Router[T]
 }
 
-func NewRouter[T any]() *Router[T] {
+func New[T any]() *Router[T] {
 	return &Router[T]{}
 }
 

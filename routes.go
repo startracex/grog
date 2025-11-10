@@ -12,7 +12,7 @@ type Routes[T any] struct {
 
 func NewRoutes[T any]() *Routes[T] {
 	return &Routes[T]{
-		Root: router.NewRouter[map[string][]T](),
+		Root: router.New[map[string][]T](),
 	}
 }
 
