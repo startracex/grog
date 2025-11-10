@@ -42,8 +42,8 @@ type WS struct {
 	mu         sync.Mutex
 }
 
-// NewWS return empty WS
-func NewWS() *WS {
+// New return empty WS
+func New() *WS {
 	return &WS{}
 }
 
@@ -83,7 +83,7 @@ func (ws *WS) Upgrade(w http.ResponseWriter, r *http.Request) {
 
 // Upgrade converse to websocket instance
 func Upgrade(w http.ResponseWriter, r *http.Request) *WS {
-	ws := NewWS()
+	ws := New()
 	ws.Upgrade(w, r)
 	return ws
 }
