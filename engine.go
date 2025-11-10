@@ -60,10 +60,7 @@ func (e *Engine[T]) ServeHTTP(res http.ResponseWriter, req *http.Request) {
 	e.putContext(c)
 }
 
-func (e *Engine[T]) getContext(
-	req *http.Request,
-	res http.ResponseWriter,
-) *handleContext[T] {
+func (e *Engine[T]) getContext(req *http.Request, res http.ResponseWriter) *handleContext[T] {
 	var c *handleContext[T]
 	if v := e.ContextPool.Get(); v != nil {
 		c = v.(*handleContext[T])
@@ -120,7 +117,7 @@ func (e *Engine[T]) Domain(domains ...string) *Engine[T] {
 	newEngine.Use(e.Middlewares...)
 
 	if e.DNS == nil {
-		e.DNS = dns.NewDNS[*Engine[T]]()
+		e.DNS = dns.New[*Engine[T]]()
 	}
 
 	for _, domain := range domains {
