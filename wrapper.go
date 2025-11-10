@@ -24,17 +24,18 @@ func WrapHandler(h http.Handler) HandlerFunc {
 }
 
 // ServeFile is similar to http.ServeFile, but it won't redirect.
-func ServeFile(c Context, filePath string) {
+func ServeFile(c Context, filePath string) error {
 	f, err := os.Open(filePath)
 	if err != nil {
-		return
+		return err
 	}
 	defer f.Close()
 	fi, err := f.Stat()
 	if err != nil {
-		return
+		return err
 	}
 	ServeContent(c, fi.Name(), fi.ModTime(), f)
+	return nil
 }
 
 // ServeContent serve file content.
