@@ -17,8 +17,6 @@ const (
 	CONNECT = http.MethodConnect
 )
 
-var AllMethods = [...]string{GET, POST, PUT, DELETE, PATCH, OPTIONS, HEAD, CONNECT, TRACE}
-
 func (group *RoutesGroup[T]) GET(pattern string, handlers ...T) *RoutesGroup[T] {
 	group.AddRoute(GET, pattern, handlers)
 	return group
@@ -64,9 +62,11 @@ func (group *RoutesGroup[T]) TRACE(pattern string, handlers ...T) *RoutesGroup[T
 	return group
 }
 
+var allMethods = [9]string{GET, POST, PUT, DELETE, PATCH, OPTIONS, HEAD, CONNECT, TRACE}
+
 func (group *RoutesGroup[T]) METHOD(method, pattern string, handlers ...T) *RoutesGroup[T] {
 	method = strings.ToUpper(method)
-	for _, m := range AllMethods {
+	for _, m := range allMethods {
 		if method == m {
 			group.AddRoute(method, pattern, handlers)
 			return group
@@ -77,7 +77,7 @@ func (group *RoutesGroup[T]) METHOD(method, pattern string, handlers ...T) *Rout
 
 // ALL defines the method to add all requests
 func (group *RoutesGroup[T]) ALL(pattern string, handlers ...T) *RoutesGroup[T] {
-	for _, method := range AllMethods {
+	for _, method := range allMethods {
 		group.AddRoute(method, pattern, handlers)
 	}
 	return group
