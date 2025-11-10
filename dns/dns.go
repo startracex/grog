@@ -16,7 +16,7 @@ type DNS[T any] struct {
 	root *dnsNode[T]
 }
 
-func NewDNS[T any]() *DNS[T] {
+func New[T any]() *DNS[T] {
 	return &DNS[T]{
 		root: &dnsNode[T]{
 			children: make(map[string]*dnsNode[T]),
