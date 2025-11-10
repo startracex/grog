@@ -85,13 +85,6 @@ func (ws *WS) Upgrade(w http.ResponseWriter, r *http.Request) error {
 	return nil
 }
 
-// Upgrade converse to websocket instance
-func Upgrade(w http.ResponseWriter, r *http.Request) *WS {
-	ws := New()
-	ws.Upgrade(w, r)
-	return ws
-}
-
 // Send data to conn with datatype using bufio.Writer
 func (ws *WS) Send(data []byte, datatype int) error {
 	if ws.Closed {
