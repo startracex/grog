@@ -28,9 +28,6 @@ func AllowAll() *Config {
 
 // MatchOrigin return if AllowOrigin match origin
 func (c *Config) MatchOrigin(origin string) bool {
-	if c.AllowOrigin == nil {
-		return false
-	}
 	for _, allow := range c.AllowOrigin {
 		if allow == origin || allow == "*" {
 			return true
@@ -49,16 +46,12 @@ func (c *Config) WriteHeader(header http.Header) {
 		header.Set("Access-Control-Allow-Credentials", "true")
 	}
 	if c.MaxAge > 0 {
-		header.Set(
-			"Access-Control-Max-Age", strconv.FormatInt(c.MaxAge, 10))
+		header.Set("Access-Control-Max-Age", strconv.FormatInt(c.MaxAge, 10))
 	}
 }
 
 // setHeaderValues set header values if values has length
 func setHeaderValues(header http.Header, key string, values []string) {
-	if values == nil {
-		return
-	}
 	str := strings.Join(values, ", ")
 	if str != "" {
 		header.Set(key, str)
