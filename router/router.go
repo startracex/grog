@@ -44,7 +44,7 @@ func (r *Router[T]) insert(path, pattern string, value T) {
 	if child == nil {
 		child = &Router[T]{
 			Part:  part,
-			Match: Dynamic(part).matchType,
+			Match: Dynamic(part).MatchType,
 		}
 		r.Children = append(r.Children, child)
 	}
@@ -113,8 +113,8 @@ func nextPart(path string) (part, remaining string) {
 }
 
 type DynamicType struct {
-	key       string
-	matchType uint8
+	Key       string
+	MatchType uint8
 }
 
 func Dynamic(key string) DynamicType {
@@ -123,8 +123,8 @@ func Dynamic(key string) DynamicType {
 		if (first == '{' && last == '}') || (first == '[' && last == ']') {
 			key = key[1 : len(key)-1]
 			result := Dynamic(key)
-			if result.matchType == MatchStrict {
-				result.matchType = MatchSingle
+			if result.MatchType == MatchStrict {
+				result.MatchType = MatchSingle
 			}
 			return result
 		}
@@ -142,8 +142,8 @@ func Dynamic(key string) DynamicType {
 		}
 	}
 	return DynamicType{
-		key:       key,
-		matchType: MatchStrict,
+		Key:       key,
+		MatchType: MatchStrict,
 	}
 }
 
@@ -163,13 +163,13 @@ func ParseParams(path, pattern string) map[string]string {
 		}
 
 		info := Dynamic(patternPart)
-		switch info.matchType {
+		switch info.MatchType {
 		case MatchSingle:
-			params[info.key] = pathPart
+			params[info.Key] = pathPart
 		case MatchMulti:
-			params[info.key] = pathPart
+			params[info.Key] = pathPart
 			if path != "" {
-				params[info.key] += "/" + path
+				params[info.Key] += "/" + path
 			}
 			return params
 		}
