@@ -12,7 +12,7 @@ func emptyAdapter(f HandlerFunc) HandlerFunc {
 
 func httpAdapter(hf http.HandlerFunc) func(Context) {
 	return func(ctx Context) {
-		hf(ctx.Writer(), ctx.Request())
+		hf(ctx, ctx.Request())
 	}
 }
 

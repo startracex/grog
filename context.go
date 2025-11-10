@@ -7,7 +7,7 @@ import (
 )
 
 type Context interface {
-	Writer() http.ResponseWriter
+	http.ResponseWriter
 	Request() *http.Request
 	Next()
 	Abort()
@@ -21,7 +21,7 @@ type Context interface {
 
 type handleContext[T any] struct {
 	request  *http.Request
-	writer   http.ResponseWriter
+	response http.ResponseWriter
 	pattern  string
 	index    int
 	adapter  func(T) func(Context)
@@ -54,10 +54,6 @@ func (c *handleContext[T]) Request() *http.Request {
 	return c.request
 }
 
-func (c *handleContext[T]) Writer() http.ResponseWriter {
-	return c.writer
-}
-
 func (c *handleContext[T]) Pattern() string {
 	return c.pattern
 }
@@ -80,4 +76,16 @@ func (c *handleContext[T]) AllowMethods() []string {
 		allowMethods = append(allowMethods, method)
 	}
 	return allowMethods
+}
+
+func (c *handleContext[T]) Header() http.Header {
+	return c.response.Header()
+}
+
+func (c *handleContext[T]) Write(b []byte) (int, error) {
+	return c.response.Write(b)
+}
+
+func (c *handleContext[T]) WriteHeader(statusCode int) {
+	c.response.WriteHeader(statusCode)
 }

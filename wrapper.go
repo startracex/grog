@@ -8,18 +8,18 @@ import (
 )
 
 func Redirect(c Context, url string, code int) {
-	http.Redirect(c.Writer(), c.Request(), url, code)
+	http.Redirect(c, c.Request(), url, code)
 }
 
 func WrapHandlerFunc(hf http.HandlerFunc) HandlerFunc {
 	return func(c Context) {
-		hf(c.Writer(), c.Request())
+		hf(c, c.Request())
 	}
 }
 
 func WrapHandler(h http.Handler) HandlerFunc {
 	return func(c Context) {
-		h.ServeHTTP(c.Writer(), c.Request())
+		h.ServeHTTP(c, c.Request())
 	}
 }
 
@@ -40,5 +40,5 @@ func ServeFile(c Context, filePath string) error {
 
 // ServeContent serve file content.
 func ServeContent(c Context, name string, modtime time.Time, f io.ReadSeeker) {
-	http.ServeContent(c.Writer(), c.Request(), name, modtime, f)
+	http.ServeContent(c, c.Request(), name, modtime, f)
 }

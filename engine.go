@@ -68,7 +68,7 @@ func (e *Engine[T]) getContext(req *http.Request, res http.ResponseWriter) *hand
 		c = new(handleContext[T])
 	}
 	c.request = req
-	c.writer = res
+	c.response = res
 	c.index = -1
 	c.adapter = e.Adapter
 	return c
@@ -76,7 +76,7 @@ func (e *Engine[T]) getContext(req *http.Request, res http.ResponseWriter) *hand
 
 func (e *Engine[T]) putContext(c *handleContext[T]) {
 	c.request = nil
-	c.writer = nil
+	c.response = nil
 	c.pattern = ""
 	c.index = -1
 	c.handlers = c.handlers[:0]
