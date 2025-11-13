@@ -14,6 +14,8 @@ type Config struct {
 	AllowCredentials bool
 	ExposeHeaders    []string
 	MaxAge           int64
+	RequestHeaders   []string
+	RequestMethod    string
 }
 
 func AllowAll() *Config {
@@ -42,11 +44,15 @@ func (c *Config) WriteHeader(header http.Header) {
 	setHeaderValues(header, "Access-Control-Allow-Methods", c.AllowMethods)
 	setHeaderValues(header, "Access-Control-Allow-Headers", c.AllowHeaders)
 	setHeaderValues(header, "Access-Control-Expose-Headers", c.ExposeHeaders)
+	setHeaderValues(header, "Access-Control-Request-Headers", c.RequestHeaders)
 	if c.AllowCredentials {
 		header.Set("Access-Control-Allow-Credentials", "true")
 	}
 	if c.MaxAge > 0 {
 		header.Set("Access-Control-Max-Age", strconv.FormatInt(c.MaxAge, 10))
+	}
+	if c.RequestMethod != "" {
+		header.Set("Access-Control-Request-Method", c.RequestMethod)
 	}
 }
 
