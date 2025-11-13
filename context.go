@@ -13,6 +13,7 @@ type Context interface {
 	http.Hijacker
 	http.Flusher
 	Request() *http.Request
+	ResponseWriter() http.ResponseWriter
 	Next()
 	Abort()
 	Reset()
@@ -80,6 +81,10 @@ func (c *handleContext[T]) AllowMethods() []string {
 		allowMethods = append(allowMethods, method)
 	}
 	return allowMethods
+}
+
+func (c *handleContext[T]) ResponseWriter() http.ResponseWriter {
+	return c.response
 }
 
 func (c *handleContext[T]) Header() http.Header {
