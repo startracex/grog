@@ -7,8 +7,8 @@ import (
 
 const (
 	MatchStrict = iota
-	MatchSingle
-	MatchMulti
+	MatchDynamic
+	MatchWildcard
 )
 
 type Router[T any] struct {
@@ -64,11 +64,11 @@ func (r *Router[T]) Search(path string) *Router[T] {
 					return result
 				}
 			}
-		case MatchSingle:
+		case MatchDynamic:
 			if result := child.Search(remaining); result != nil {
 				return result
 			}
-		case MatchMulti:
+		case MatchWildcard:
 			return child
 		}
 	}
@@ -120,21 +120,21 @@ func Dynamic(key string) DynamicType {
 			key = key[1 : len(key)-1]
 			result := Dynamic(key)
 			if result.MatchType == MatchStrict {
-				result.MatchType = MatchSingle
+				result.MatchType = MatchDynamic
 			}
 			return result
 		}
 		if first == ':' {
-			return DynamicType{key[1:], MatchSingle}
+			return DynamicType{key[1:], MatchDynamic}
 		}
 		if first == '*' {
-			return DynamicType{key[1:], MatchMulti}
+			return DynamicType{key[1:], MatchWildcard}
 		}
 		if strings.HasPrefix(key, "...") {
-			return DynamicType{key[3:], MatchMulti}
+			return DynamicType{key[3:], MatchWildcard}
 		}
 		if strings.HasSuffix(key, "...") {
-			return DynamicType{key[:len(key)-3], MatchMulti}
+			return DynamicType{key[:len(key)-3], MatchWildcard}
 		}
 	}
 	return DynamicType{
@@ -160,9 +160,9 @@ func ParseParams(path, pattern string) map[string]string {
 
 		info := Dynamic(patternPart)
 		switch info.MatchType {
-		case MatchSingle:
+		case MatchDynamic:
 			params[info.Key] = pathPart
-		case MatchMulti:
+		case MatchWildcard:
 			params[info.Key] = pathPart
 			if path != "" {
 				params[info.Key] += "/" + path
