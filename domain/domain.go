@@ -1,42 +1,41 @@
-package dns
+package domain
 
 import (
 	"net"
 	"strings"
 )
 
-type dnsNode[T any] struct {
+type Node[T any] struct {
 	label    string
-	children map[string]*dnsNode[T]
+	children map[string]*Node[T]
 	value    T
 	valid    bool
 }
 
-type DNS[T any] struct {
-	root *dnsNode[T]
+type Domain[T any] struct {
+	root *Node[T]
 }
 
-func New[T any]() *DNS[T] {
-	return &DNS[T]{
-		root: &dnsNode[T]{
-			children: make(map[string]*dnsNode[T]),
+func New[T any]() *Domain[T] {
+	return &Domain[T]{
+		root: &Node[T]{
+			children: make(map[string]*Node[T]),
 		},
 	}
 }
 
-func (t *DNS[T]) Insert(domain string, value T) {
-
+func (t *Domain[T]) Insert(domain string, value T) {
 	if domain == "*" {
-		t.root.children["*"] = &dnsNode[T]{
+		t.root.children["*"] = &Node[T]{
 			label:    "*",
-			children: make(map[string]*dnsNode[T]),
+			children: make(map[string]*Node[T]),
 			value:    value,
 			valid:    true,
 		}
 		return
 	}
 
-	labels := splitDomain(domain)
+	labels := split(domain)
 
 	if len(labels) > 1 && labels[0] == "@" {
 		t.insertLabels(labels[1:], value)
@@ -46,16 +45,16 @@ func (t *DNS[T]) Insert(domain string, value T) {
 	t.insertLabels(labels, value)
 }
 
-func (t *DNS[T]) insertLabels(labels []string, value T) {
+func (t *Domain[T]) insertLabels(labels []string, value T) {
 	current := t.root
 
 	for i := len(labels) - 1; i >= 0; i-- {
 		label := labels[i]
 
 		if _, exists := current.children[label]; !exists {
-			current.children[label] = &dnsNode[T]{
+			current.children[label] = &Node[T]{
 				label:    label,
-				children: make(map[string]*dnsNode[T]),
+				children: make(map[string]*Node[T]),
 			}
 		}
 
@@ -66,12 +65,12 @@ func (t *DNS[T]) insertLabels(labels []string, value T) {
 	current.valid = true
 }
 
-func (t *DNS[T]) Match(domain string) (T, bool) {
-	labels := splitDomain(domain)
+func (t *Domain[T]) Match(domain string) (T, bool) {
+	labels := split(domain)
 	return t.matchRecursive(t.root, labels, len(labels)-1)
 }
 
-func (t *DNS[T]) matchRecursive(node *dnsNode[T], labels []string, level int) (T, bool) {
+func (t *Domain[T]) matchRecursive(node *Node[T], labels []string, level int) (T, bool) {
 	if level < 0 {
 		return node.value, node.valid
 	}
@@ -101,7 +100,7 @@ func (t *DNS[T]) matchRecursive(node *dnsNode[T], labels []string, level int) (T
 	return _0, false
 }
 
-func splitDomain(domain string) []string {
+func split(domain string) []string {
 	domain = strings.Trim(domain, ".")
 	if domain == "" {
 		return []string{}
@@ -109,7 +108,7 @@ func splitDomain(domain string) []string {
 	return strings.Split(domain, ".")
 }
 
-func GetDomain(hostport string) string {
+func Clean(hostport string) string {
 	host, _, err := net.SplitHostPort(hostport)
 	if err != nil {
 		return hostport

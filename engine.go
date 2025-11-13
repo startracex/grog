@@ -6,7 +6,7 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/startracex/grog/dns"
+	"github.com/startracex/grog/domain"
 )
 
 var Host = "127.0.0.1"
@@ -17,16 +17,16 @@ type Engine[T any] struct {
 	groups      []*RoutesGroup[T]
 	noRoute     []T
 	noMethod    []T
-	DNS         *dns.DNS[*Engine[T]]
+	Domains     *domain.Domain[*Engine[T]]
 	Adapter     func(T) func(Context)
 	ContextPool sync.Pool
 }
 
 // ServeHTTP for http.ListenAndServe
 func (e *Engine[T]) ServeHTTP(res http.ResponseWriter, req *http.Request) {
-	if e.DNS != nil {
-		domain := dns.GetDomain(req.Host)
-		matchEngine, ok := e.DNS.Match(domain)
+	if e.Domains != nil {
+		host := domain.Clean(req.Host)
+		matchEngine, ok := e.Domains.Match(host)
 		if ok {
 			matchEngine.ServeHTTP(res, req)
 			return
@@ -116,12 +116,12 @@ func (e *Engine[T]) Domain(domains ...string) *Engine[T] {
 	newEngine.noRoute = e.noRoute
 	newEngine.Use(e.Middlewares...)
 
-	if e.DNS == nil {
-		e.DNS = dns.New[*Engine[T]]()
+	if e.Domains == nil {
+		e.Domains = domain.New[*Engine[T]]()
 	}
 
 	for _, domain := range domains {
-		e.DNS.Insert(domain, newEngine)
+		e.Domains.Insert(domain, newEngine)
 	}
 	return newEngine
 }
