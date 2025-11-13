@@ -18,48 +18,39 @@ const (
 )
 
 func (group *RoutesGroup[T]) GET(pattern string, handlers ...T) *RoutesGroup[T] {
-	group.AddRoute(GET, pattern, handlers)
-	return group
+	return group.AddRoute(GET, pattern, handlers)
 }
 
 func (group *RoutesGroup[T]) POST(pattern string, handlers ...T) *RoutesGroup[T] {
-	group.AddRoute(POST, pattern, handlers)
-	return group
+	return group.AddRoute(POST, pattern, handlers)
 }
 
 func (group *RoutesGroup[T]) PUT(pattern string, handlers ...T) *RoutesGroup[T] {
-	group.AddRoute(PUT, pattern, handlers)
-	return group
+	return group.AddRoute(PUT, pattern, handlers)
 }
 
 func (group *RoutesGroup[T]) DELETE(pattern string, handlers ...T) *RoutesGroup[T] {
-	group.AddRoute(DELETE, pattern, handlers)
-	return group
+	return group.AddRoute(DELETE, pattern, handlers)
 }
 
 func (group *RoutesGroup[T]) PATCH(pattern string, handlers ...T) *RoutesGroup[T] {
-	group.AddRoute(PATCH, pattern, handlers)
-	return group
+	return group.AddRoute(PATCH, pattern, handlers)
 }
 
 func (group *RoutesGroup[T]) OPTIONS(pattern string, handlers ...T) *RoutesGroup[T] {
-	group.AddRoute(OPTIONS, pattern, handlers)
-	return group
+	return group.AddRoute(OPTIONS, pattern, handlers)
 }
 
 func (group *RoutesGroup[T]) HEAD(pattern string, handlers ...T) *RoutesGroup[T] {
-	group.AddRoute(HEAD, pattern, handlers)
-	return group
+	return group.AddRoute(HEAD, pattern, handlers)
 }
 
 func (group *RoutesGroup[T]) CONNECT(pattern string, handlers ...T) *RoutesGroup[T] {
-	group.AddRoute(CONNECT, pattern, handlers)
-	return group
+	return group.AddRoute(CONNECT, pattern, handlers)
 }
 
 func (group *RoutesGroup[T]) TRACE(pattern string, handlers ...T) *RoutesGroup[T] {
-	group.AddRoute(TRACE, pattern, handlers)
-	return group
+	return group.AddRoute(TRACE, pattern, handlers)
 }
 
 var allMethods = [9]string{GET, POST, PUT, DELETE, PATCH, OPTIONS, HEAD, CONNECT, TRACE}
@@ -68,8 +59,7 @@ func (group *RoutesGroup[T]) METHOD(method, pattern string, handlers ...T) *Rout
 	method = strings.ToUpper(method)
 	for _, m := range allMethods {
 		if method == m {
-			group.AddRoute(method, pattern, handlers)
-			return group
+			return group.AddRoute(method, pattern, handlers)
 		}
 	}
 	panic("unsupported method")

@@ -55,10 +55,12 @@ func (group *RoutesGroup[T]) Group(prefix string, middlewares ...T) *RoutesGroup
 	return newGroup
 }
 
-func (group *RoutesGroup[T]) AddRoute(method string, pattern string, handlers []T) {
+func (group *RoutesGroup[T]) AddRoute(method string, pattern string, handlers []T) *RoutesGroup[T] {
 	group.Engine.Routes.AddRoute(method, group.Prefix+pattern, handlers)
+	return group
 }
 
-func (group *RoutesGroup[T]) Use(middlewares ...T) {
+func (group *RoutesGroup[T]) Use(middlewares ...T) *RoutesGroup[T] {
 	group.Middlewares = append(group.Middlewares, middlewares...)
+	return group
 }
