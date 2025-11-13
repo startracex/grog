@@ -60,10 +60,6 @@ func ReadTypeFrame(reader *bufio.Reader) (data []byte, code int, err error) {
 	case 0:
 		err = ErrOpcode0
 		return
-	case 1:
-		err = ErrOpcode1
-	case 2:
-		err = ErrOpcode2
 	case 3, 4, 5, 6, 7:
 		err = ErrOpcode37
 		return
