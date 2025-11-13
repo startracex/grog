@@ -31,7 +31,7 @@ func Recovery() HandlerFunc {
 			if err != nil {
 				message := fmt.Sprintf("%s", err)
 				log.Printf("%s\n\n", trace(message))
-				c.WriteHeader(500)
+				c.ResponseWriter().WriteHeader(500)
 			}
 		}()
 		c.Next()
@@ -47,9 +47,9 @@ func AutoOptions() HandlerFunc {
 			AllowHeaders: []string{"*"},
 			MaxAge:       86400,
 		}
-		config.WriteHeader(c.Header())
+		config.WriteHeader(c.ResponseWriter().Header())
 		if c.Request().Method == OPTIONS {
-			c.WriteHeader(204)
+			c.ResponseWriter().WriteHeader(204)
 			c.Abort()
 			return
 		}
