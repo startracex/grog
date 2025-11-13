@@ -92,16 +92,15 @@ func ReadTypeFrame(reader *bufio.Reader) (data []byte, code int, err error) {
 	masked := secondByte&0x80 == 0x80
 	payloadLength := int(secondByte & 0x7F)
 
-	if payloadLength == 126 {
-
+	switch payloadLength {
+	case 126:
 		lengthBytes := make([]byte, 2)
 		_, err = reader.Read(lengthBytes)
 		if err != nil {
 			return
 		}
 		payloadLength = int(binary.BigEndian.Uint16(lengthBytes))
-	} else if payloadLength == 127 {
-
+	case 127:
 		lengthBytes := make([]byte, 8)
 		_, err = reader.Read(lengthBytes)
 		if err != nil {
