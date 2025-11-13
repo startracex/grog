@@ -9,8 +9,6 @@ import (
 	"github.com/startracex/grog/domain"
 )
 
-var Host = "127.0.0.1"
-
 type Engine[T any] struct {
 	*RoutesGroup[T]
 	Routes      *Routes[T]
