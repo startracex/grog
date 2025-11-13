@@ -91,10 +91,12 @@ func New[T any]() *Engine[T] {
 				return new(handleContext[T])
 			},
 		},
+		Adapter: func(t T) func(Context) {
+			return defaultAdapter(t)
+		},
 	}
 	engine.RoutesGroup = &RoutesGroup[T]{Engine: engine}
 	engine.Groups = []*RoutesGroup[T]{engine.RoutesGroup}
-	engine.Adapter = defaultAdapter
 	return engine
 }
 
