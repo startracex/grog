@@ -51,7 +51,7 @@ func (group *RoutesGroup[T]) Group(prefix string, middlewares ...T) *RoutesGroup
 		Middlewares: middlewares,
 	}
 	newGroup.Middlewares = append(newGroup.Middlewares, middlewares...)
-	engine.groups = append(engine.groups, newGroup)
+	engine.Groups = append(engine.Groups, newGroup)
 	return newGroup
 }
 

@@ -14,7 +14,7 @@ var Host = "127.0.0.1"
 type Engine[T any] struct {
 	*RoutesGroup[T]
 	Routes      *Routes[T]
-	groups      []*RoutesGroup[T]
+	Groups      []*RoutesGroup[T]
 	noRoute     []T
 	noMethod    []T
 	Domains     *domain.Domain[*Engine[T]]
@@ -44,7 +44,7 @@ func (e *Engine[T]) ServeHTTP(res http.ResponseWriter, req *http.Request) {
 		if !ok {
 			c.handlers = e.noMethod
 		} else {
-			for _, group := range e.groups {
+			for _, group := range e.Groups {
 				if strings.HasPrefix(c.pattern, group.Prefix+"/") {
 					c.handlers = append(c.handlers, group.Middlewares...)
 				}
@@ -95,7 +95,7 @@ func New[T any]() *Engine[T] {
 		},
 	}
 	engine.RoutesGroup = &RoutesGroup[T]{Engine: engine}
-	engine.groups = []*RoutesGroup[T]{engine.RoutesGroup}
+	engine.Groups = []*RoutesGroup[T]{engine.RoutesGroup}
 	engine.Adapter = defaultAdapter
 	return engine
 }
