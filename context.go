@@ -1,6 +1,8 @@
 package grog
 
 import (
+	"bufio"
+	"net"
 	"net/http"
 
 	"github.com/startracex/grog/router"
@@ -8,6 +10,8 @@ import (
 
 type Context interface {
 	http.ResponseWriter
+	http.Hijacker
+	http.Flusher
 	Request() *http.Request
 	Next()
 	Abort()
@@ -88,4 +92,12 @@ func (c *handleContext[T]) Write(b []byte) (int, error) {
 
 func (c *handleContext[T]) WriteHeader(statusCode int) {
 	c.response.WriteHeader(statusCode)
+}
+
+func (c *handleContext[T]) Hijack() (net.Conn, *bufio.ReadWriter, error) {
+	return c.response.(http.Hijacker).Hijack()
+}
+
+func (c *handleContext[T]) Flush() {
+	c.response.(http.Flusher).Flush()
 }
