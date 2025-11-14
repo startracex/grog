@@ -45,7 +45,6 @@ func AutoOptions() HandlerFunc {
 			AllowOrigin:  []string{c.Request().Header.Get("Origin")},
 			AllowMethods: c.AllowMethods(),
 			AllowHeaders: []string{"*"},
-			MaxAge:       86400,
 		}
 		config.WriteHeader(c.ResponseWriter().Header())
 		if c.Request().Method == OPTIONS {
