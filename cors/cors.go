@@ -18,16 +18,6 @@ type Config struct {
 	RequestMethod    string
 }
 
-func AllowAll() *Config {
-	return &Config{
-		AllowOrigin:   []string{"*"},
-		AllowMethods:  []string{"*"},
-		AllowHeaders:  []string{"*"},
-		ExposeHeaders: []string{"*"},
-		MaxAge:        86400,
-	}
-}
-
 // MatchOrigin return if AllowOrigin match origin
 func (c *Config) MatchOrigin(origin string) bool {
 	for _, allow := range c.AllowOrigin {
