@@ -12,7 +12,7 @@ go get -u github.com/startracex/grog
 
 ```go
 import (
-    "github.com/startracex/grog"
+  "github.com/startracex/grog"
 )
 ```
 
@@ -26,7 +26,7 @@ engine := grog.New[http.HandlerFunc]()
 // this step can be omitted, the default converter will be used.
 engine.Adapter = func(hf http.HandlerFunc) func(grog.Context) {
   return func(c grog.Context) {
-    hf(c.Writer(), c.Request())
+    hf(c.ResponseWriter(), c.Request())
   }
 }
 
@@ -44,15 +44,39 @@ engine.Run("9000")
 ### With multiple domains
 
 ```go
-pagesDomain := engine.Domain("pages.localhost")
-pagesDomain.GET("/", func (c grog.Context) {
-    c.Writer.Write([]byte("Hello Pages!"))
-})
+package main
 
-apiDomain := engine.Domain("api.localhost")
-apiDomain.GET("/", func (c grog.Context) {
-    c.Writer.Write([]byte("Hello APIs!"))
-})
+import (
+  "github.com/startracex/grog"
+  "github.com/startracex/grog/websocket"
+)
 
-engine.Run("9000")
+func main() {
+	engine := grog.New[grog.HandlerFunc]()
+
+  pagesDomain := engine.Domain("pages.localhost")
+  pagesDomain.GET("/", func (c grog.Context) {
+    c.ResponseWriter().Write([]byte("Hello Pages!"))
+  })
+
+  apiDomain := engine.Domain("api.localhost")
+  apiDomain.GET("/", func (c grog.Context) {
+    c.ResponseWriter().Write([]byte("Hello APIs!"))
+  })
+
+  chatDomain := engine.Domain("chat.localhost")
+  chatDomain.GET("/", func (c grog.Context) {
+    ws := websocket.New()
+    ws.Upgrade(c.ResponseWriter(), c.Request())
+    for {
+      data, datatype, err := ws.Message()
+      if ws.Closed || err != nil {
+        break
+      }
+      ws.Send(data, datatype)
+    }
+  })
+
+  engine.Run("9000")
+}
 ```
