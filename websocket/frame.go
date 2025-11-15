@@ -1,47 +1,12 @@
 package websocket
 
 import (
-	"bufio"
 	"encoding/binary"
-	"errors"
-	"io"
-	"net"
-	"time"
 )
 
-const (
-	TEXT   = 1
-	BINARY = 2
-	CLOSE  = 8
-	PING   = 9
-	PONG   = 10
-)
-
-var (
-	ErrOpcode0  = errors.New("OPCODE 0")
-	ErrOpcode1  = errors.New("OPCODE 1")
-	ErrOpcode2  = errors.New("OPCODE 2")
-	ErrOpcode37 = errors.New("OPCODE 3-7")
-	ErrOpcode8  = errors.New("OPCODE 8")
-	ErrOpcode9  = errors.New("OPCODE 9")
-	ErrOpcodeA  = errors.New("OPCODE 10")
-	ErrOpcodeBF = errors.New("OPCODE 11-15")
-	ErrFinNot1  = errors.New("FIN NOT 1")
-	ErrRsvNot0  = errors.New("RSV NOT 0")
-)
-
-// ReadFrame read bytes from reader, if datatype is 1 or 2, error is nil.
-func ReadFrame(reader *bufio.Reader) ([]byte, error) {
-	data, code, err := ReadTypeFrame(reader)
-	if code == 1 || code == 2 {
-		return data, nil
-	}
-	return nil, err
-}
-
-// ReadTypeFrame read bytes from reader, return data, datatype, error.
-func ReadTypeFrame(reader *bufio.Reader) (data []byte, code int, err error) {
-	code = -1
+// ReadFrame read bytes from reader, return data, datatype, error.
+func ReadFrame(reader Reader) (data []byte, dadatype int, err error) {
+	dadatype = -1
 	firstByte, err := reader.ReadByte()
 	if err != nil {
 		return
@@ -51,7 +16,7 @@ func ReadTypeFrame(reader *bufio.Reader) (data []byte, code int, err error) {
 	rsv2 := firstByte&0x20 == 0x20
 	rsv3 := firstByte&0x10 == 0x10
 	opcode := firstByte & 0x0F
-	code = int(opcode)
+	dadatype = int(opcode)
 	if !fin {
 		err = ErrFinNot1
 		return
@@ -63,14 +28,7 @@ func ReadTypeFrame(reader *bufio.Reader) (data []byte, code int, err error) {
 	case 3, 4, 5, 6, 7:
 		err = ErrOpcode37
 		return
-	case 8:
-		err = ErrOpcode8
-		return
-	case 9:
-		err = ErrOpcode9
-		return
-	case 10:
-		err = ErrOpcodeA
+	case 8, 9, 10:
 		return
 	case 11, 12, 13, 14, 15:
 		err = ErrOpcodeBF
@@ -128,11 +86,8 @@ func ReadTypeFrame(reader *bufio.Reader) (data []byte, code int, err error) {
 	return
 }
 
-func WriteFrame(writer *bufio.Writer, data []byte, datatype int) error {
-	if datatype == CLOSE {
-		return writer.Flush()
-	}
-
+// WriteFrame write data with datatype to writer.
+func WriteFrame(writer Writer, data []byte, datatype int) error {
 	frameLength := len(data)
 
 	// Write the first byte: FIN flag and OPCODE
@@ -168,66 +123,18 @@ func WriteFrame(writer *bufio.Writer, data []byte, datatype int) error {
 
 	// Write the payload data
 	_, err = writer.Write(data)
-	if err != nil {
-		return err
-	}
-
-	return writer.Flush()
+	return err
 }
 
-// Ping sends ping to connection and waits for pong
-func Ping(conn net.Conn, bt []byte, d time.Duration) error {
-	writer := bufio.NewWriter(conn)
-	err := WriteFrame(writer, bt, PING)
-	if err != nil {
-		return err
-	}
-	reader := bufio.NewReader(conn)
-
-	er := make(chan error)
-	go func() {
-		_, err := ReadFrame(reader)
-		er <- err
-	}()
-
-	select {
-	case err := <-er:
-		if errors.Is(err, ErrOpcodeA) {
-			return nil
+// CloseFrame close the connection with status code and reason.
+func CloseFrame(writer Writer, code int, reason string) error {
+	var payload []byte
+	if code != 0 {
+		payload = make([]byte, 0, 2+len(reason))
+		payload = append(payload, byte(code>>8), byte(code))
+		if reason != "" {
+			payload = append(payload, []byte(reason)...)
 		}
-		return errors.New("NOT PONG")
-	case <-time.After(d):
-		return errors.New("PING TIMEOUT")
 	}
-}
-
-// Pone sends pong to connection
-func Pone(conn net.Conn, bt []byte) error {
-	writer := bufio.NewWriter(conn)
-	err := WriteFrame(writer, bt, PONG)
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
-func Close(conn net.Conn, bt []byte) error {
-	writer := bufio.NewWriter(conn)
-	err := WriteFrame(writer, bt, CLOSE)
-	if err != nil {
-		return err
-	}
-	return conn.Close()
-}
-
-func IsPing(err error) bool {
-	return errors.Is(err, ErrOpcode9)
-}
-
-func IsPong(err error) bool {
-	return errors.Is(err, ErrOpcodeA)
-}
-
-func IsClose(err error) bool {
-	return errors.Is(err, ErrOpcode8) || errors.Is(err, io.EOF)
+	return WriteFrame(writer, payload, CLOSE)
 }

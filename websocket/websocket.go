@@ -4,35 +4,12 @@ import (
 	"bufio"
 	"crypto/sha1"
 	"encoding/base64"
-	"errors"
-	"io"
 	"net"
 	"net/http"
 	"sync"
-	"time"
 )
 
-var ErrClosed = errors.New("CLOSED")
-
-func GetKey(h http.Header) string {
-	return h.Get("Sec-WebSocket-Key")
-}
-
-func SumAccept(key string) string {
-	sha := sha1.New()
-	sha.Write([]byte(key + "258EAFA5-E914-47DA-95CA-C5AB0DC85B11"))
-	return base64.StdEncoding.EncodeToString(sha.Sum(nil))
-}
-
-func IsUpgradeWebsocket(h http.Header) bool {
-	return h.Get("Upgrade") == "websocket"
-}
-
-func WriteAccept(w io.Writer, accept string) (int, error) {
-	return w.Write([]byte("HTTP/1.1 101 Switching Protocols\nUpgrade: websocket\nConnection: Upgrade\nSec-WebSocket-Accept: " + accept + "\n\n"))
-}
-
-type WS struct {
+type WebSocket struct {
 	Conn       net.Conn
 	Writer     *bufio.Writer
 	WriterSize int
@@ -42,42 +19,37 @@ type WS struct {
 	mu         sync.Mutex
 }
 
-// New return empty WS
-func New() *WS {
-	return &WS{}
+func New() *WebSocket {
+	return &WebSocket{}
 }
 
-func (ws *WS) checkSize() {
+func (ws *WebSocket) Connect(conn net.Conn) {
 	if ws.ReaderSize <= 0 {
 		ws.ReaderSize = 4096
 	}
 	if ws.WriterSize <= 0 {
 		ws.WriterSize = 4096
 	}
-}
-
-func (ws *WS) Connect(conn net.Conn) {
-	ws.checkSize()
 	ws.Conn = conn
 	ws.Reader = bufio.NewReaderSize(conn, ws.ReaderSize)
 	ws.Writer = bufio.NewWriterSize(conn, ws.WriterSize)
 }
 
-var ErrNotUpgrade = errors.New("grog/websocket: not upgrade")
-
 // Upgrade http connection to websocket
-func (ws *WS) Upgrade(w http.ResponseWriter, r *http.Request) error {
-	if !IsUpgradeWebsocket(r.Header) {
+func (ws *WebSocket) Upgrade(w http.ResponseWriter, r *http.Request) error {
+	if r.Header.Get("Upgrade") != "websocket" {
 		return ErrNotUpgrade
 	}
-	key := GetKey(r.Header)
-	accept := SumAccept(key)
+	key := r.Header.Get("Sec-WebSocket-Key")
+	sha := sha1.New()
+	sha.Write([]byte(key + "258EAFA5-E914-47DA-95CA-C5AB0DC85B11"))
+	accept := base64.StdEncoding.EncodeToString(sha.Sum(nil))
 	hijack := w.(http.Hijacker)
 	conn, _, err := hijack.Hijack()
 	if err != nil {
 		return err
 	}
-	_, err = WriteAccept(conn, accept)
+	_, err = conn.Write([]byte("HTTP/1.1 101 Switching Protocols\r\nUpgrade: websocket\r\nConnection: Upgrade\r\nSec-WebSocket-Accept: " + accept + "\r\n\r\n"))
 	if err != nil {
 		return err
 	}
@@ -86,55 +58,47 @@ func (ws *WS) Upgrade(w http.ResponseWriter, r *http.Request) error {
 }
 
 // Send data to conn with datatype using bufio.Writer
-func (ws *WS) Send(data []byte, datatype int) error {
+func (ws *WebSocket) Send(data []byte, datatype int) error {
 	if ws.Closed {
 		return ErrClosed
 	}
-	return WriteFrame(ws.Writer, data, datatype)
+	err := WriteFrame(ws.Writer, data, datatype)
+	if err != nil {
+		return err
+	}
+	return ws.Writer.Flush()
 }
 
-// Message waits for a message and handles PING automatically
-func (ws *WS) Message() ([]byte, error) {
-	data, err := ReadFrame(ws.Reader)
-	if IsClose(err) { // OPCODE 8 close / EOF close
-		ws.Closed = true
-		return nil, err
+// Message waits for a message
+func (ws *WebSocket) Message() ([]byte, int, error) {
+	if ws.Closed {
+		return nil, -1, ErrClosed
 	}
-	if IsPing(err) { // OPCODE 9 ping
-		err := WriteFrame(ws.Writer, data, PONG)
-		if err != nil {
-			return nil, err
-		}
-		return data, ErrOpcode9
+	data, datatype, err := ReadFrame(ws.Reader)
+	switch datatype {
+	case PING:
+		err = ws.Send(nil, PONG)
+	case CLOSE:
+		err = ws.Close(1000, "")
 	}
-	return data, nil
+	return data, datatype, err
 }
 
 // Close connection
-func (ws *WS) Close() error {
+func (ws *WebSocket) Close(code int, reason string) error {
 	if ws.Closed {
-		return ErrClosed
+		return nil
 	}
 	ws.mu.Lock()
 	defer ws.mu.Unlock()
 	ws.Closed = true
-	err := WriteFrame(ws.Writer, nil, CLOSE)
+	err := CloseFrame(ws.Writer, code, reason)
 	if err != nil {
 		return err
 	}
-
-	ws.Closed = true
-	return ws.Conn.Close()
-
-}
-
-func (ws *WS) Ping(bt []byte, d time.Duration) error {
-	if ws.Closed {
-		return ErrClosed
+	err = ws.Writer.Flush()
+	if err != nil {
+		return err
 	}
-	return Ping(ws.Conn, bt, d)
-}
-
-func (ws *WS) Pone(bt []byte) error {
-	return Pone(ws.Conn, bt)
+	return ws.Conn.Close()
 }
